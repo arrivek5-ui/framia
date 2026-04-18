@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ Framia</title>
+<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js" type="module" id="exifr-module"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:          #f5f0e8;
+    --sidebar:     #faf7f2;
+    --panel:       #fff9f3;
+    --border:      #e2d8cc;
+    --border-soft: #ede6db;
+    --accent:      #b07d62;
+    --accent2:     #d4a57a;
+    --accent-soft: #f0e0d2;
+    --pink:        #d4919a;
+    --pink-soft:   #f7eaec;
+    --text:        #4a3f38;
+    --text-muted:  #a89888;
+    --text-light:  #c4b4a8;
+    --input-bg:    #fdf9f5;
+    --radius:      10px;
+    --radius-sm:   7px;
+    --shadow:      0 1px 4px rgba(100,70,50,0.08);
+    --shadow-md:   0 4px 16px rgba(100,70,50,0.12);
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  /* ===== SIDEBAR ===== */
+  #sidebar {
+    width: 300px;
+    min-width: 300px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 2px 0 12px rgba(100,70,50,0.05);
+  }
+
+  #sidebar-header {
+    padding: 11px 16px 9px;
+    border-bottom: 1px solid var(--border-soft);
+    background: linear-gradient(135deg, #fdf8f0, #faf3ea);
+  }
+
+  #sidebar-header h1 {
+    font-size: 14px;
+    font-family: 'Lora', Georgia, serif;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    font-weight: 500;
+    font-style: italic;
+  }
+
+  #sidebar-header .subtitle {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 2px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+  }
+
+  /* ===== TABS ===== */
+  #tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: #fdf9f4;
+    padding: 6px 10px 0;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 6px 4px;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    transition: all 0.18s;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+    font-weight: 500;
+    background: rgba(176,125,98,0.06);
+  }
+
+  .tab-btn:hover:not(.active) {
+    color: var(--text);
+    background: rgba(176,125,98,0.04);
+  }
+
+  /* ===== PANELS ===== */
+  .tab-panel {
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    flex: 1;
+    padding-bottom: 16px;
+  }
+
+  .tab-panel.active { display: flex; }
+
+  .tab-panel::-webkit-scrollbar { width: 3px; }
+  .tab-panel::-webkit-scrollbar-track { background: transparent; }
+  .tab-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ===== SECTION ===== */
+  .section {
+    padding: 9px 14px 8px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .section-title {
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--text-light);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+    margin-left: 4px;
+  }
+
+  /* ===== DROP ZONE ===== */
+  #drop-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.22s;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    line-height: 1.6;
+    background: var(--input-bg);
+  }
+
+  #drop-zone:hover, #drop-zone.drag-over {
+    border-color: var(--accent2);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  #drop-zone .icon { font-size: 22px; margin-bottom: 4px; display: block; }
+  #file-input { display: none; }
+
+  /* ===== SLIDER ROW ===== */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .row label {
+    min-width: 68px;
+    color: var(--text-muted);
+    font-size: 11px;
+    flex-shrink: 0;
+    font-weight: 400;
+  }
+
+  .row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    outline: none;
+  }
+
+  .row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+    box-shadow: 0 1px 4px rgba(176,125,98,0.3);
+  }
+
+  .row input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(176,125,98,0.45);
+  }
+
+  .row .val {
+    width: 42px;
+    min-width: 42px;
+    text-align: center;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px 4px;
+    -moz-appearance: textfield;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .row .val:focus { border-color: var(--accent2); }
+  .row .val::-webkit-inner-spin-button,
+  .row .val::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  /* ===== COLOR ROW ===== */
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .color-row label { flex: 1; color: var(--text-muted); font-size: 11px; }
+
+  .color-row input[type=color] {
+    width: 36px;
+    height: 24px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+    background: var(--input-bg);
+    cursor: pointer;
+  }
+
+  /* ===== GRID BUTTONS ===== */
+  .grid-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .grid-2x3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .grid-btn {
+    padding: 6px 4px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10.5px;
+    text-align: center;
+    transition: all 0.16s;
+    line-height: 1.4;
+    box-shadow: var(--shadow);
+  }
+
+  .grid-btn:hover {
+    border-color: var(--accent2);
+    color: var(--text);
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .grid-btn.active {
+    background: linear-gradient(135deg, #f5e6dc, #f0ddd0);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(176,125,98,0.2);
+  }
+
+  /* ===== FONT SELECT ===== */
+  .select-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .select-row label { min-width: 68px; color: var(--text-muted); font-size: 11px; }
+
+  .select-row select {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 5px 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    outline: none;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+
+  .select-row select:focus { border-color: var(--accent2); }
+
+  /* ===== TEXTAREA ===== */
+  textarea {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 6px 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px;
+    resize: vertical;
+    min-height: 44px;
+    outline: none;
+    margin-bottom: 6px;
+    line-height: 1.5;
+    box-shadow: var(--shadow);
+  }
+
+  textarea:focus { border-color: var(--accent2); }
+
+  /* ===== TOGGLE BUTTONS ===== */
+  .toggle-group {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 6px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 5px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10.5px;
+    text-align: center;
+    transition: all 0.16s;
+    box-shadow: var(--shadow);
+  }
+
+  .toggle-btn:hover { border-color: var(--accent2); color: var(--text); }
+
+  .toggle-btn.active {
+    background: linear-gradient(135deg, #f5e6dc, #f0ddd0);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ===== OUTPUT SIZE ===== */
+  .preset-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .preset-btn {
+    padding: 5px 11px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10.5px;
+    transition: all 0.16s;
+    box-shadow: var(--shadow);
+  }
+
+  .preset-btn:hover { border-color: var(--accent2); color: var(--text); background: var(--accent-soft); }
+  .preset-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(176,125,98,0.35);
+  }
+
+  .custom-px-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .custom-px-row label { color: var(--text-muted); font-size: 11px; }
+
+  .custom-px-row input[type=number] {
+    width: 80px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 5px 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    outline: none;
+    box-shadow: var(--shadow);
+  }
+
+  .custom-px-row input[type=number]:focus { border-color: var(--accent2); }
+
+  /* ===== DOWNLOAD BUTTON ===== */
+  #btn-download {
+    display: block;
+    width: calc(100% - 24px);
+    margin: 6px 12px 6px;
+    padding: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    font-family: 'Lora', Georgia, serif;
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.22s;
+    font-weight: 500;
+    font-style: italic;
+    box-shadow: 0 3px 12px rgba(176,125,98,0.3);
+  }
+
+  #btn-download:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(176,125,98,0.4);
+    background: linear-gradient(135deg, #c08a72, #ddb88a);
+  }
+
+  #btn-download:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ===== PREVIEW ===== */
+  #preview-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ede8e0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(212,165,122,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(212,145,154,0.07) 0%, transparent 50%);
+    overflow: auto;
+    padding: 28px;
+    position: relative;
+  }
+
+  #canvas-wrap {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  #preview-canvas {
+    max-width: 100%;
+    max-height: calc(100vh - 80px);
+    display: block;
+    box-shadow: 0 12px 48px rgba(100,70,50,0.25), 0 2px 8px rgba(100,70,50,0.1);
+    border-radius: 2px;
+  }
+
+  #preview-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-light);
+    font-size: 13px;
+    text-align: center;
+    font-family: 'Lora', Georgia, serif;
+    font-style: italic;
+  }
+
+  #preview-placeholder .big { font-size: 44px; opacity: 0.5; }
+
+  /* ===== TOAST ===== */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 15px;
+    font-size: 11.5px;
+    color: var(--accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateY(6px);
+    z-index: 999;
+    max-width: 260px;
+    box-shadow: var(--shadow-md);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ===== EXIF INFO ===== */
+  #exif-info {
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-top: 8px;
+    padding: 7px 10px;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    border-left: 2px solid var(--accent2);
+  }
+
+  /* ===== SECTION DIVIDER ===== */
+  .spacer { height: 4px; }
+
+  /* ===== MOBILE LAYOUT ===== */
+  @media (max-width: 768px) {
+    body {
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* プレビューエリアを上に、サイドバーを下に */
+    #preview-area {
+      order: 1;
+      flex: 1;
+      min-height: 0;
+      padding: 12px;
+    }
+
+    #sidebar {
+      order: 2;
+      width: 100%;
+      min-width: unset;
+      height: auto;
+      max-height: 52dvh;
+      border-right: none;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 16px rgba(100,70,50,0.08);
+      border-radius: 16px 16px 0 0;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    #sidebar-header {
+      padding: 10px 16px 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #sidebar-header h1 { font-size: 13px; }
+    #sidebar-header .subtitle { display: none; }
+
+    /* ドラッグハンドル風の装飾 */
+    #sidebar-header::before {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    #sidebar { position: relative; }
+
+    #tab-bar {
+      padding: 4px 10px 0;
+    }
+
+    .tab-panel {
+      padding-bottom: 8px;
+    }
+
+    /* セクションを少し詰める */
+    .section {
+      padding: 8px 14px 7px;
+    }
+
+    /* スライダーを太く・タッチしやすく */
+    .row input[type=range] {
+      height: 6px;
+    }
+
+    .row input[type=range]::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* 数値入力欄を少し大きく */
+    .row .val {
+      width: 48px;
+      min-width: 48px;
+      font-size: 13px;
+      padding: 4px 5px;
+    }
+
+    /* グリッドボタンを少し大きく */
+    .grid-btn {
+      padding: 8px 4px;
+      font-size: 11px;
+    }
+
+    /* トグルボタン */
+    .toggle-btn {
+      padding: 7px;
+      font-size: 11px;
+    }
+
+    /* ダウンロードボタン */
+    #btn-download {
+      margin: 6px 12px 10px;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    /* キャンバス */
+    #preview-canvas {
+      max-height: calc(48dvh - 60px);
+    }
+
+    /* ドロップゾーン */
+    #drop-zone {
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    #drop-zone .icon { font-size: 18px; margin-bottom: 2px; }
+
+    /* プリセットボタン */
+    .preset-btn {
+      padding: 6px 13px;
+      font-size: 11px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>✦ Framia</h1>
+    <div class="subtitle">frame the moment</div>
+  </div>
+
+  <div id="tab-bar">
+    <button class="tab-btn active" data-tab="basic">✦ 基本設定</button>
+    <button class="tab-btn" data-tab="effect">✿ エフェクト</button>
+  </div>
+
+  <!-- ===== TAB 1: 基本 ===== -->
+  <div class="tab-panel active" id="tab-basic">
+
+    <!-- 画像 -->
+    <div class="section">
+      <div class="section-title">📷 画像</div>
+      <div id="drop-zone">
+        <span class="icon">🖼️</span>
+        ドラッグ＆ドロップ<br>
+        <small>または クリックして選択</small>
+      </div>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp">
+      <div id="exif-info" style="display:none"></div>
+    </div>
+
+    <!-- 余白 & 枠線 -->
+    <div class="section">
+      <div class="section-title">⬜ 余白 &amp; 枠線</div>
+      <div class="row"><label>上下余白</label><input type="range" id="pad-tb" min="0" max="30" value="4" step="0.5"><input type="number" class="val" id="v-pad-tb" value="4" min="0" max="30" step="0.5"><span style="color:var(--text-muted);font-size:10px">%</span></div>
+      <div class="row"><label>左右余白</label><input type="range" id="pad-lr" min="0" max="30" value="4" step="0.5"><input type="number" class="val" id="v-pad-lr" value="4" min="0" max="30" step="0.5"><span style="color:var(--text-muted);font-size:10px">%</span></div>
+      <div class="row"><label>下余白補正</label><input type="range" id="pad-extra" min="0" max="20" value="6" step="0.5"><input type="number" class="val" id="v-pad-extra" value="6" min="0" max="20" step="0.5"><span style="color:var(--text-muted);font-size:10px">%</span></div>
+      <div class="row"><label>枠線太さ</label><input type="range" id="border-w" min="0" max="2" value="0" step="0.05"><input type="number" class="val" id="v-border-w" value="0" min="0" max="2" step="0.05"><span style="color:var(--text-muted);font-size:10px">%</span></div>
+      <div class="color-row"><label>余白色</label><input type="color" id="bg-color" value="#ffffff"></div>
+      <div class="color-row"><label>枠線色</label><input type="color" id="border-color" value="#cccccc"></div>
+    </div>
+
+    <!-- Exifテキスト -->
+    <div class="section">
+      <div class="section-title">📋 Exifテキスト</div>
+      <div class="grid-2x3" id="layout-grid">
+        <button class="grid-btn active" data-layout="0">左下2行</button>
+        <button class="grid-btn" data-layout="1">中央Shot on</button>
+        <button class="grid-btn" data-layout="2">左右4点</button>
+        <button class="grid-btn" data-layout="3">右下2行</button>
+        <button class="grid-btn" data-layout="4">中央1行</button>
+        <button class="grid-btn" data-layout="5">左右シンプル</button>
+      </div>
+      <div class="row"><label>文字サイズ</label><input type="range" id="txt-size" min="0.5" max="8" value="2.5" step="0.1"><input type="number" class="val" id="v-txt-size" value="2.5" min="0.5" max="8" step="0.1"><span style="color:var(--text-muted);font-size:10px">%</span></div>
+      <div class="select-row">
+        <label>フォント</label>
+        <select id="font-sel">
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Noto Serif JP', serif">Noto Serif JP</option>
+          <option value="'Courier New', monospace">Courier New</option>
+          <option value="'Helvetica Neue', sans-serif">Helvetica Neue</option>
+        </select>
+      </div>
+      <div class="color-row"><label>文字色</label><input type="color" id="txt-color" value="#333333"></div>
+    </div>
+
+    <!-- コメント -->
+    <div class="section">
+      <div class="section-title">✏️ コメント</div>
+      <textarea id="comment-text" placeholder="タイトル・コメントを入力（空欄で非表示）" rows="2"></textarea>
+      <div class="row" style="gap:4px;margin-bottom:4px;">
+        <span style="color:var(--text-muted);font-size:10px;min-width:40px;">位置</span>
+        <div class="toggle-group" style="flex:1;margin:0">
+          <button class="toggle-btn active" id="comment-pos-above" data-pos="above">Exifの上</button>
+          <button class="toggle-btn" id="comment-pos-below" data-pos="below">Exifの下</button>
+        </div>
+      </div>
+      <div class="row" style="gap:4px;">
+        <span style="color:var(--text-muted);font-size:10px;min-width:40px;">サイズ</span>
+        <div class="toggle-group" style="flex:1;margin:0">
+          <button class="toggle-btn active" id="comment-sz-lg" data-sz="large">大きめ</button>
+          <button class="toggle-btn" id="comment-sz-sm" data-sz="same">同じ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 出力 -->
+    <div class="section">
+      <div class="section-title">💾 出力サイズ</div>
+      <div class="preset-row">
+        <button class="preset-btn" data-px="540">540</button>
+        <button class="preset-btn" data-px="720">720</button>
+        <button class="preset-btn active" data-px="1080">1080</button>
+        <button class="preset-btn" data-px="1440">1440</button>
+        <button class="preset-btn" data-px="2048">2048</button>
+        <button class="preset-btn" data-px="0">元サイズ</button>
+      </div>
+      <div class="custom-px-row">
+        <label>カスタム</label>
+        <input type="number" id="custom-px" placeholder="例: 1920" min="100" max="8000">
+        <span style="color:var(--text-muted);font-size:10px">px（長辺）</span>
+      </div>
+    </div>
+
+  </div><!-- /tab-basic -->
+
+  <!-- ===== TAB 2: エフェクト ===== -->
+  <div class="tab-panel" id="tab-effect">
+
+    <!-- カラーグレード -->
+    <div class="section">
+      <div class="section-title">🎨 カラーグレード</div>
+      <div class="grid-2x2" id="grade-grid">
+        <button class="grid-btn active" data-grade="none">なし</button>
+        <button class="grid-btn" data-grade="cinema">シネマ調<br><small style="color:var(--text-muted)">Teal&Orange</small></button>
+        <button class="grid-btn" data-grade="film">フィルム調<br><small style="color:var(--text-muted)">Kodak風</small></button>
+        <button class="grid-btn" data-grade="noir">ノワール調<br><small style="color:var(--text-muted)">ハイコントラスト</small></button>
+      </div>
+      <div class="row"><label>強度</label><input type="range" id="grade-str" min="0" max="100" value="60"><input type="number" class="val" id="v-grade-str" value="60" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px">%</span></div>
+    </div>
+
+    <!-- ビネット -->
+    <div class="section">
+      <div class="section-title">◎ ビネット</div>
+      <div class="row"><label>強度</label><input type="range" id="vignette" min="0" max="100" value="0"><input type="number" class="val" id="v-vignette" value="0" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px">%</span></div>
+      <div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:2px;">
+        四隅を暗くして写真中央を引き立てる
+      </div>
+    </div>
+
+    <!-- ドリームブラー -->
+    <div class="section">
+      <div class="section-title">💫 ドリームブラー</div>
+      <div class="row"><label>強度</label><input type="range" id="dream-blur" min="0" max="100" value="0"><input type="number" class="val" id="v-dream-blur" value="0" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px"></span></div>
+      <div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:2px;">
+        中心鮮明・端へ向かって放射状にぼかす
+      </div>
+    </div>
+
+    <!-- 横ブラー -->
+    <div class="section">
+      <div class="section-title">↔ 横ブラー</div>
+      <div class="row"><label>強度</label><input type="range" id="h-blur" min="0" max="100" value="0"><input type="number" class="val" id="v-h-blur" value="0" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px"></span></div>
+      <div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:2px;">
+        水平方向に引き伸ばすズームブラー
+      </div>
+    </div>
+
+  </div><!-- /tab-effect -->
+
+  <button id="btn-download" disabled>✦ save as PNG</button>
+</div>
+
+<!-- ===== PREVIEW ===== -->
+<div id="preview-area">
+  <div id="preview-placeholder">
+    <div class="big">📷</div>
+    画像をここにドロップ
+  </div>
+  <div id="canvas-wrap" style="display:none">
+    <canvas id="preview-canvas"></canvas>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+// ===== exifr import =====
+let exifr = null;
+try {
+  const mod = await import('https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js');
+  exifr = mod.default || mod;
+} catch(e) {}
+
+// ===== STATE =====
+const S = {
+  img: null,
+  exif: { date:'', camera:'', lens:'', fnum:'', iso:'', focal:'' },
+  layout: 0,
+  grade: 'none',
+  gradeStr: 60,
+  vignette: 0,
+  dreamBlur: 0,
+  hBlur: 0,
+  padTB: 4, padLR: 4, padExtra: 6,
+  borderW: 0,
+  bgColor: '#ffffff',
+  borderColor: '#cccccc',
+  txtSize: 2.5,
+  txtFont: 'Georgia, serif',
+  txtColor: '#333333',
+  comment: '',
+  commentPos: 'above',
+  commentSz: 'large',
+  outPx: 1080,
+};
+
+// ===== EL CACHE =====
+const EL = {};
+const ids = [
+  'drop-zone','file-input','preview-canvas','canvas-wrap','preview-placeholder',
+  'exif-info','toast','btn-download',
+  'pad-tb','pad-lr','pad-extra','border-w','bg-color','border-color',
+  'txt-size','font-sel','txt-color',
+  'comment-text','comment-pos-above','comment-pos-below','comment-sz-lg','comment-sz-sm',
+  'grade-str','vignette','dream-blur','h-blur',
+  'custom-px',
+  'v-pad-tb','v-pad-lr','v-pad-extra','v-border-w',
+  'v-txt-size','v-grade-str','v-vignette','v-dream-blur','v-h-blur',
+];
+ids.forEach(id => EL[id] = document.getElementById(id));
+
+// ===== TABS =====
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== TOAST =====
+function toast(msg, duration=2500) {
+  EL['toast'].textContent = msg;
+  EL['toast'].classList.add('show');
+  setTimeout(() => EL['toast'].classList.remove('show'), duration);
+}
+
+// ===== PERFORMANCE =====
+const isMobile = window.innerWidth <= 768;
+let renderTimer = null;
+let isRendering = false;
+
+// 即時描画（ブラーなし操作用）
+function render() {
+  if (isRendering) return;
+  _doRender();
+}
+
+// debounce描画（ブラー系スライダー用・150ms待つ）
+function renderDeferred() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(() => {
+    if (!isRendering) _doRender();
+  }, 150);
+}
+
+function _doRender() {
+  isRendering = true;
+  _renderCore();
+  isRendering = false;
+}
+
+// ===== SLIDER BINDINGS =====
+function bindSlider(id, valId, key, deferred=false) {
+  const slider = EL[id], numInput = EL[valId];
+  const doRender = deferred ? renderDeferred : render;
+
+  // スライダー → 数値欄
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    S[key] = v;
+    numInput.value = v;
+    doRender();
+  });
+
+  // 数値欄 → スライダー
+  numInput.addEventListener('input', () => {
+    let v = parseFloat(numInput.value);
+    const mn = parseFloat(slider.min), mx = parseFloat(slider.max);
+    if (isNaN(v)) return;
+    v = Math.min(mx, Math.max(mn, v));
+    S[key] = v;
+    slider.value = v;
+    doRender();
+  });
+
+  // フォーカスを外したときに範囲外の値を補正して表示
+  numInput.addEventListener('blur', () => {
+    let v = parseFloat(numInput.value);
+    const mn = parseFloat(slider.min), mx = parseFloat(slider.max);
+    if (isNaN(v)) v = mn;
+    v = Math.min(mx, Math.max(mn, v));
+    numInput.value = v;
+    S[key] = v;
+    slider.value = v;
+    render();
+  });
+}
+bindSlider('pad-tb','v-pad-tb','padTB');
+bindSlider('pad-lr','v-pad-lr','padLR');
+bindSlider('pad-extra','v-pad-extra','padExtra');
+bindSlider('border-w','v-border-w','borderW');
+bindSlider('txt-size','v-txt-size','txtSize');
+bindSlider('grade-str','v-grade-str','gradeStr', true);
+bindSlider('vignette','v-vignette','vignette', true);
+bindSlider('dream-blur','v-dream-blur','dreamBlur', true);
+bindSlider('h-blur','v-h-blur','hBlur', true);
+
+// Color
+['bg-color','border-color','txt-color'].forEach(id => {
+  EL[id].addEventListener('input', () => {
+    const map = {'bg-color':'bgColor','border-color':'borderColor','txt-color':'txtColor'};
+    S[map[id]] = EL[id].value;
+    render();
+  });
+});
+
+// Font
+EL['font-sel'].addEventListener('change', () => { S.txtFont = EL['font-sel'].value; render(); });
+
+// Comment
+EL['comment-text'].addEventListener('input', () => { S.comment = EL['comment-text'].value; render(); });
+
+// Comment pos/sz toggles
+['comment-pos-above','comment-pos-below'].forEach(id => {
+  EL[id].addEventListener('click', () => {
+    EL['comment-pos-above'].classList.toggle('active', id==='comment-pos-above');
+    EL['comment-pos-below'].classList.toggle('active', id==='comment-pos-below');
+    S.commentPos = EL[id].dataset.pos;
+    render();
+  });
+});
+['comment-sz-lg','comment-sz-sm'].forEach(id => {
+  EL[id].addEventListener('click', () => {
+    EL['comment-sz-lg'].classList.toggle('active', id==='comment-sz-lg');
+    EL['comment-sz-sm'].classList.toggle('active', id==='comment-sz-sm');
+    S.commentSz = EL[id].dataset.sz;
+    render();
+  });
+});
+
+// Layout grid
+document.querySelectorAll('#layout-grid .grid-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#layout-grid .grid-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.layout = parseInt(btn.dataset.layout);
+    render();
+  });
+});
+
+// Grade grid
+document.querySelectorAll('#grade-grid .grid-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#grade-grid .grid-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.grade = btn.dataset.grade;
+    render();
+  });
+});
+
+// Preset px
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.outPx = parseInt(btn.dataset.px);
+    EL['custom-px'].value = '';
+  });
+});
+
+EL['custom-px'].addEventListener('input', () => {
+  const v = parseInt(EL['custom-px'].value);
+  if (v > 0) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    S.outPx = v;
+  }
+});
+
+// ===== DROP / FILE =====
+const dz = EL['drop-zone'];
+dz.addEventListener('click', () => EL['file-input'].click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
+EL['file-input'].addEventListener('change', e => loadFile(e.target.files[0]));
+
+async function loadFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = async () => {
+    S.img = img;
+    EL['preview-placeholder'].style.display = 'none';
+    EL['canvas-wrap'].style.display = 'block';
+    EL['btn-download'].disabled = false;
+    await loadExif(file);
+    render();
+  };
+  img.src = url;
+}
+
+async function loadExif(file) {
+  if (!exifr) return;
+  try {
+    const raw = await exifr.parse(file, true);
+    if (!raw) return;
+    const e = S.exif;
+    const dateRaw = raw.DateTimeOriginal || raw.DateTimeDigitized || raw.DateTime;
+    if (dateRaw) {
+      const d = typeof dateRaw === 'string'
+        ? dateRaw.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1/$2/$3')
+        : dateRaw.toLocaleDateString('ja-JP');
+      e.date = d.split(' ')[0];
+    }
+    e.camera = raw.Make && raw.Model
+      ? (raw.Model.includes(raw.Make) ? raw.Model : raw.Make + ' ' + raw.Model).trim()
+      : raw.Model || raw.Make || '';
+    e.lens = raw.LensModel || raw.Lens || '';
+    const fraw = raw.FNumber || raw.ApertureValue;
+    e.fnum = fraw ? 'f/' + (typeof fraw==='number' ? fraw.toFixed(1) : fraw) : '';
+    const isoRaw = raw.ISO || raw.ISOSpeedRatings || raw.PhotographicSensitivity;
+    e.iso = isoRaw ? 'ISO ' + (Array.isArray(isoRaw) ? isoRaw[0] : isoRaw) : '';
+    const fl = raw.FocalLength;
+    e.focal = fl ? (typeof fl==='number' ? fl.toFixed(0) : fl) + 'mm' : '';
+
+    const got = [e.date,e.camera,e.lens,e.fnum].filter(Boolean).length;
+    toast(`Exif 読み込み完了（${got}/4項目）`);
+    const info = [e.camera, e.lens, e.focal, e.fnum, e.iso, e.date].filter(Boolean).join('  ·  ');
+    EL['exif-info'].style.display = 'block';
+    EL['exif-info'].textContent = info || 'Exifなし';
+  } catch(err) {
+    EL['exif-info'].style.display = 'block';
+    EL['exif-info'].textContent = 'Exif読み込み失敗';
+  }
+}
+
+// ===== RENDER =====
+function _renderCore() {
+  if (!S.img) return;
+
+  const canvas = EL['preview-canvas'];
+  const ctx = canvas.getContext('2d');
+
+  const iw = S.img.naturalWidth, ih = S.img.naturalHeight;
+  const aspect = iw / ih;
+
+  // Padding in fractions of short side
+  const shortSide = Math.min(iw, ih);
+  const padTB = (S.padTB / 100) * shortSide;
+  const padLR = (S.padLR / 100) * shortSide;
+  const padExtra = (S.padExtra / 100) * shortSide;
+
+  const canvasW = iw + padLR * 2;
+  const canvasH = ih + padTB * 2 + padExtra;
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+
+  // Background
+  ctx.fillStyle = S.bgColor;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Border (shortSide基準の%→px換算)
+  const borderPx = (S.borderW / 100) * shortSide;
+  if (borderPx > 0) {
+    ctx.strokeStyle = S.borderColor;
+    ctx.lineWidth = borderPx;
+    ctx.strokeRect(padLR - borderPx/2, padTB - borderPx/2, iw + borderPx, ih + borderPx);
+  }
+
+  // Draw image
+  ctx.drawImage(S.img, padLR, padTB, iw, ih);
+
+  // Color grade
+  if (S.grade !== 'none' && S.gradeStr > 0) {
+    applyGrade(ctx, padLR, padTB, iw, ih, S.grade, S.gradeStr / 100);
+  }
+
+  // Vignette
+  if (S.vignette > 0) {
+    applyVignette(ctx, padLR, padTB, iw, ih, S.vignette / 100);
+  }
+
+  // Dream blur
+  if (S.dreamBlur > 0) {
+    applyDreamBlur(ctx, padLR, padTB, iw, ih, S.img, S.dreamBlur / 100);
+  }
+
+  // Horizontal blur
+  if (S.hBlur > 0) {
+    applyHBlur(ctx, padLR, padTB, iw, ih, S.img, S.hBlur / 100);
+  }
+
+  // Exif text
+  const txtPx = (S.txtSize / 100) * shortSide;
+  const commentPx = S.commentSz === 'large' ? txtPx * 1.5 : txtPx;
+
+  drawExif(ctx, padLR, padTB, iw, ih, padExtra, txtPx, commentPx);
+}
+
+// ===== GRADE =====
+function applyGrade(ctx, x, y, w, h, grade, str) {
+  const imageData = ctx.getImageData(x, y, w, h);
+  const src = imageData.data;
+  const dst = new Uint8ClampedArray(src);
+
+  for (let i = 0; i < src.length; i += 4) {
+    let r = src[i], g = src[i+1], b = src[i+2];
+
+    if (grade === 'cinema') {
+      // Teal & Orange
+      const lum = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+      const warm = lum > 0.5;
+      if (warm) { r = Math.min(255, r + 20); b = Math.max(0, b - 20); }
+      else { g = Math.min(255, g + 10); b = Math.min(255, b + 30); }
+      // contrast
+      r = clamp(((r/255 - 0.5)*1.15 + 0.5)*255);
+      g = clamp(((g/255 - 0.5)*1.15 + 0.5)*255);
+      b = clamp(((b/255 - 0.5)*1.15 + 0.5)*255);
+      // desaturate slightly
+      const avg = (r+g+b)/3;
+      r = lerp(r, avg, 0.05); g = lerp(g, avg, 0.05); b = lerp(b, avg, 0.05);
+    } else if (grade === 'film') {
+      // Shadow mat
+      r = Math.max(20, r); g = Math.max(18, g); b = Math.max(15, b);
+      // Brown overlay
+      r = lerp(r, 210, 0.05); g = lerp(g, 175, 0.03); b = lerp(b, 130, 0.02);
+      // Grain
+      const grain = (Math.random()-0.5)*22;
+      r = clamp(r+grain); g = clamp(g+grain*0.95); b = clamp(b+grain*0.9);
+    } else if (grade === 'noir') {
+      // Desaturate
+      const lum = r*0.299 + g*0.587 + b*0.114;
+      r = lerp(r, lum, 0.8); g = lerp(g, lum, 0.8); b = lerp(b, lum, 0.8);
+      // High contrast
+      r = clamp(((r/255 - 0.5)*1.4 + 0.5)*255);
+      g = clamp(((g/255 - 0.5)*1.4 + 0.5)*255);
+      b = clamp(((b/255 - 0.5)*1.4 + 0.5)*255);
+      // Shadow grain
+      if (r < 80) { const n=(Math.random()-0.5)*18; r=clamp(r+n); g=clamp(g+n); b=clamp(b+n); }
+    }
+
+    dst[i]   = lerp(src[i],   r, str);
+    dst[i+1] = lerp(src[i+1], g, str);
+    dst[i+2] = lerp(src[i+2], b, str);
+    dst[i+3] = src[i+3];
+  }
+
+  imageData.data.set(dst);
+  ctx.putImageData(imageData, x, y);
+}
+
+function clamp(v) { return Math.max(0, Math.min(255, Math.round(v))); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// ===== VIGNETTE =====
+function applyVignette(ctx, x, y, w, h, str) {
+  const cx = x + w/2, cy = y + h/2;
+  const r = Math.sqrt(w*w + h*h) * 0.5;
+  const grad = ctx.createRadialGradient(cx, cy, r*0.3, cx, cy, r);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, `rgba(0,0,0,${str * 0.85})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, w, h);
+}
+
+// ===== DREAM BLUR =====
+function applyDreamBlur(ctx, x, y, w, h, img, amount) {
+  const maxSteps = isMobile ? 6 : 20;
+  const steps = Math.round(3 + amount * (maxSteps - 3));
+  const maxScale = 1 + amount * 0.08;
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const sc = 1 + (maxScale - 1) * t;
+    const alpha = (1 - t) * 0.15;
+    ctx.globalAlpha = alpha;
+    const nx = x + w/2 - (w * sc)/2;
+    const ny = y + h/2 - (h * sc)/2;
+    ctx.drawImage(img, nx, ny, w * sc, h * sc);
+  }
+  ctx.restore();
+}
+
+// ===== HORIZONTAL BLUR =====
+function applyHBlur(ctx, x, y, w, h, img, amount) {
+  const maxSteps = isMobile ? 6 : 24;
+  const steps = Math.round(4 + amount * (maxSteps - 4));
+  const maxStretchX = 1 + amount * 0.18;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const scX = 1 + (maxStretchX - 1) * t; // 水平のみ拡大
+    const alpha = (1 - t) * 0.12;
+    ctx.globalAlpha = alpha;
+    // 水平のみ拡大（垂直は変えない）
+    const nw = w * scX;
+    const nx = x + w/2 - nw/2;
+    ctx.drawImage(img, nx, y, nw, h);
+  }
+  ctx.restore();
+}
+
+// ===== EXIF LAYOUT =====
+function drawExif(ctx, px, py, pw, ph, padExtra, txtPx, commentPx) {
+  const e = S.exif;
+  const bottomY = py + ph + padExtra;
+  const midY = py + ph + padExtra * 0.5;
+
+  ctx.font = `italic ${txtPx}px ${S.txtFont}`;
+  ctx.fillStyle = S.txtColor;
+
+  const line1 = [e.date, e.camera].filter(Boolean).join('  ');
+  const line2 = [e.lens, e.focal].filter(Boolean).join('  ');
+  const line3 = [e.fnum, e.iso].filter(Boolean).join('  ');
+  const shotOn = e.camera ? `Shot on ${e.camera}` : '';
+  const leftTop = [e.camera, e.lens].filter(Boolean).join(' / ');
+  const rightTop = [e.focal, e.fnum, e.iso].filter(Boolean).join('  ');
+  const rightBottom = e.date;
+  const dotline = [e.date, e.camera, e.lens].filter(Boolean).join(' · ');
+
+  const layouts = {
+    0: () => { // 左下2行
+      if (S.comment && S.commentPos === 'above') drawComment(ctx, px, midY - txtPx*1.2, pw, commentPx, txtPx, 'left');
+      ctx.textAlign = 'left';
+      if (line1) ctx.fillText(line1, px, midY);
+      if (line2 || line3) ctx.fillText([line2,line3].filter(Boolean).join('  '), px, midY + txtPx * 1.4);
+      if (S.comment && S.commentPos === 'below') drawComment(ctx, px, midY + txtPx*2.8, pw, commentPx, txtPx, 'left');
+    },
+    1: () => { // 中央 Shot on
+      ctx.textAlign = 'center';
+      const cx = px + pw/2;
+      if (S.comment && S.commentPos === 'above') drawComment(ctx, cx, midY - txtPx*1.2, pw, commentPx, txtPx, 'center');
+      if (shotOn) {
+        ctx.font = `${txtPx}px ${S.txtFont}`;
+        ctx.fillText('Shot on', cx, midY);
+        ctx.font = `bold ${txtPx*1.15}px ${S.txtFont}`;
+        ctx.fillText(e.camera||'', cx, midY + txtPx * 1.4);
+        ctx.font = `italic ${txtPx}px ${S.txtFont}`;
+      }
+      if (S.comment && S.commentPos === 'below') drawComment(ctx, cx, midY + txtPx*2.8, pw, commentPx, txtPx, 'center');
+    },
+    2: () => { // 左右4点
+      ctx.textAlign = 'left';
+      if (leftTop) ctx.fillText(leftTop, px, midY);
+      ctx.textAlign = 'right';
+      if (rightTop) ctx.fillText(rightTop, px+pw, midY);
+      ctx.textAlign = 'left';
+      if (S.comment) ctx.fillText(S.comment, px, midY + txtPx*1.4);
+      ctx.textAlign = 'right';
+      if (rightBottom) ctx.fillText(rightBottom, px+pw, midY + txtPx*1.4);
+    },
+    3: () => { // 右下2行
+      ctx.textAlign = 'right';
+      const rx = px + pw;
+      if (S.comment && S.commentPos === 'above') drawComment(ctx, rx, midY - txtPx*1.2, pw, commentPx, txtPx, 'right');
+      if (line1) ctx.fillText(line1, rx, midY);
+      if (line2 || line3) ctx.fillText([line2,line3].filter(Boolean).join('  '), rx, midY + txtPx*1.4);
+      if (S.comment && S.commentPos === 'below') drawComment(ctx, rx, midY + txtPx*2.8, pw, commentPx, txtPx, 'right');
+    },
+    4: () => { // 中央1行
+      ctx.textAlign = 'center';
+      const cx = px + pw/2;
+      if (S.comment && S.commentPos === 'above') drawComment(ctx, cx, midY - txtPx*1.2, pw, commentPx, txtPx, 'center');
+      if (dotline) ctx.fillText(dotline, cx, midY);
+      if (S.comment && S.commentPos === 'below') drawComment(ctx, cx, midY + txtPx*1.6, pw, commentPx, txtPx, 'center');
+    },
+    5: () => { // 左右シンプル
+      ctx.font = `bold ${txtPx*1.3}px ${S.txtFont}`;
+      ctx.textAlign = 'left';
+      if (e.camera) ctx.fillText(e.camera, px, midY);
+      ctx.font = `italic ${txtPx}px ${S.txtFont}`;
+      ctx.textAlign = 'right';
+      if (e.date) ctx.fillText(e.date, px+pw, midY);
+    },
+  };
+
+  (layouts[S.layout] || layouts[0])();
+}
+
+function drawComment(ctx, anchorX, y, pw, commentPx, txtPx, align) {
+  if (!S.comment) return;
+  ctx.save();
+  ctx.textAlign = align;
+  ctx.font = `italic ${commentPx}px ${S.txtFont}`;
+  ctx.fillStyle = S.txtColor;
+  ctx.fillText(S.comment, anchorX, y);
+  ctx.restore();
+}
+
+// ===== DOWNLOAD =====
+EL['btn-download'].addEventListener('click', () => {
+  if (!S.img) return;
+
+  const src = EL['preview-canvas'];
+  const outPx = S.outPx;
+  const sw = src.width, sh = src.height;
+
+  let dw, dh;
+  if (outPx === 0) { dw = sw; dh = sh; }
+  else {
+    const scale = outPx / Math.max(sw, sh);
+    dw = Math.round(sw * scale);
+    dh = Math.round(sh * scale);
+  }
+
+  const out = document.createElement('canvas');
+  out.width = dw; out.height = dh;
+  const oct = out.getContext('2d');
+  oct.imageSmoothingQuality = 'high';
+  oct.drawImage(src, 0, 0, dw, dh);
+
+  out.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `framia-${dw}px.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    toast(`保存: framia-${dw}px.png`);
+  }, 'image/png');
+});
+
+</script>
+</body>
+</html>
