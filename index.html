@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>✦ Framia</title>
-<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js" type="module" id="exifr-module"></script>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -27,8 +26,6 @@
     --shadow:      0 1px 4px rgba(100,70,50,0.08);
     --shadow-md:   0 4px 16px rgba(100,70,50,0.12);
   }
-
-  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -260,19 +257,16 @@
   }
 
   /* ===== GRID BUTTONS ===== */
-  .grid-2x2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-    margin-bottom: 8px;
-  }
-
+  .grid-2x2,
   .grid-2x3 {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 5px;
     margin-bottom: 8px;
   }
+
+  /* 2列グリッドで横幅いっぱいに置くボタン（奇数個目用） */
+  .grid-btn.span-2 { grid-column: 1 / -1; }
 
   .grid-btn {
     padding: 6px 4px;
@@ -783,9 +777,10 @@
       <div class="section-title">🎨 カラーグレード</div>
       <div class="grid-2x2" id="grade-grid">
         <button class="grid-btn active" data-grade="none">なし</button>
-        <button class="grid-btn" data-grade="cinema">シネマ調<br><small style="color:var(--text-muted)">Teal&Orange</small></button>
+        <button class="grid-btn" data-grade="cinema">シネマ調<br><small style="color:var(--text-muted)">Teal&amp;Orange</small></button>
         <button class="grid-btn" data-grade="film">フィルム調<br><small style="color:var(--text-muted)">Kodak風</small></button>
         <button class="grid-btn" data-grade="noir">ノワール調<br><small style="color:var(--text-muted)">ハイコントラスト</small></button>
+        <button class="grid-btn span-2" data-grade="portra">Portra調<br><small style="color:var(--text-muted)">Portra 400風・肌色やわらか</small></button>
       </div>
       <div class="row"><label>強度</label><input type="range" id="grade-str" min="0" max="100" value="60"><input type="number" class="val" id="v-grade-str" value="60" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px">%</span></div>
     </div>
@@ -837,11 +832,10 @@
 
 <script type="module">
 // ===== exifr import =====
-let exifr = null;
-try {
-  const mod = await import('https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js');
-  exifr = mod.default || mod;
-} catch(e) {}
+// 読み込み完了を待たずにUIを初期化する（CDNが遅くてもボタン等が反応するように）
+const exifrReady = import('https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js')
+  .then(mod => mod.default || mod)
+  .catch(() => null);
 
 // ===== STATE =====
 const S = {
@@ -892,10 +886,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ===== TOAST =====
+let toastTimer = null;
 function toast(msg, duration=2500) {
   EL['toast'].textContent = msg;
   EL['toast'].classList.add('show');
-  setTimeout(() => EL['toast'].classList.remove('show'), duration);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => EL['toast'].classList.remove('show'), duration);
 }
 
 // ===== PERFORMANCE =====
@@ -919,8 +915,11 @@ function renderDeferred() {
 
 function _doRender() {
   isRendering = true;
-  _renderCore();
-  isRendering = false;
+  try {
+    _renderCore();
+  } finally {
+    isRendering = false;
+  }
 }
 
 // ===== SLIDER BINDINGS =====
@@ -1047,27 +1046,47 @@ dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dra
 dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
 EL['file-input'].addEventListener('change', e => loadFile(e.target.files[0]));
+const pa = document.getElementById('preview-area');
+pa.addEventListener('dragover', e => e.preventDefault());
+pa.addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); });
 
+let loadSeq = 0;
 async function loadFile(file) {
   if (!file || !file.type.startsWith('image/')) return;
+  const seq = ++loadSeq;
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = async () => {
+    URL.revokeObjectURL(url);
+    if (seq !== loadSeq) return; // 後から別の画像が選ばれた
     S.img = img;
+    // 前の写真のExifが残らないようにリセット
+    S.exif = { date:'', camera:'', lens:'', fnum:'', iso:'', focal:'' };
     EL['preview-placeholder'].style.display = 'none';
     EL['canvas-wrap'].style.display = 'block';
     EL['btn-download'].disabled = false;
-    await loadExif(file);
+    await loadExif(file, seq);
+    if (seq !== loadSeq) return;
     render();
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    toast('画像を読み込めませんでした');
   };
   img.src = url;
 }
 
-async function loadExif(file) {
-  if (!exifr) return;
+async function loadExif(file, seq) {
+  const exifr = await exifrReady;
+  if (!exifr || seq !== loadSeq) return;
   try {
     const raw = await exifr.parse(file, true);
-    if (!raw) return;
+    if (seq !== loadSeq) return;
+    if (!raw) {
+      EL['exif-info'].style.display = 'block';
+      EL['exif-info'].textContent = 'Exifなし';
+      return;
+    }
     const e = S.exif;
     const dateRaw = raw.DateTimeOriginal || raw.DateTimeDigitized || raw.DateTime;
     if (dateRaw) {
@@ -1106,7 +1125,6 @@ function _renderCore() {
   const ctx = canvas.getContext('2d');
 
   const iw = S.img.naturalWidth, ih = S.img.naturalHeight;
-  const aspect = iw / ih;
 
   // Padding in fractions of short side
   const shortSide = Math.min(iw, ih);
@@ -1201,6 +1219,22 @@ function applyGrade(ctx, x, y, w, h, grade, str) {
       b = clamp(((b/255 - 0.5)*1.4 + 0.5)*255);
       // Shadow grain
       if (r < 80) { const n=(Math.random()-0.5)*18; r=clamp(r+n); g=clamp(g+n); b=clamp(b+n); }
+    } else if (grade === 'portra') {
+      // Kodak Portra 400 風
+      const lum0 = (r*0.299 + g*0.587 + b*0.114) / 255;
+      // 緑を黄色寄りに（緑が突出している画素ほど R を足し B を引く）
+      const greenness = Math.max(0, g - Math.max(r, b));
+      r += greenness * 0.35; b -= greenness * 0.15;
+      // 彩度を控えめに（輝度へ18%寄せる）
+      const lum = r*0.299 + g*0.587 + b*0.114;
+      r = lerp(r, lum, 0.18); g = lerp(g, lum, 0.18); b = lerp(b, lum, 0.18);
+      // 暖色寄りのホワイトバランス
+      r *= 1.05; g *= 1.01; b *= 0.93;
+      // トーンカーブ：シャドウを持ち上げてマットに・中間を少し明るく・白は飛ばさない
+      r = portraTone(r); g = portraTone(g); b = portraTone(b);
+      // ハイライトをクリーム色へ
+      const hl = smoothstep(0.6, 1.0, lum0) * 0.3;
+      r = clamp(lerp(r, 250, hl)); g = clamp(lerp(g, 240, hl)); b = clamp(lerp(b, 218, hl));
     }
 
     dst[i]   = lerp(src[i],   r, str);
@@ -1215,6 +1249,12 @@ function applyGrade(ctx, x, y, w, h, grade, str) {
 
 function clamp(v) { return Math.max(0, Math.min(255, Math.round(v))); }
 function lerp(a, b, t) { return a + (b - a) * t; }
+function smoothstep(e0, e1, v) { const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
+// 黒→約15、白→約245。中間(0.5)は約+9明るく
+function portraTone(v) {
+  const x = Math.max(0, Math.min(1, v / 255));
+  return (0.06 + 0.9 * (x + 0.12 * x * (1 - x))) * 255;
+}
 
 // ===== VIGNETTE =====
 function applyVignette(ctx, x, y, w, h, str) {
@@ -1233,7 +1273,9 @@ function applyDreamBlur(ctx, x, y, w, h, img, amount) {
   const steps = Math.round(3 + amount * (maxSteps - 3));
   const maxScale = 1 + amount * 0.08;
   ctx.save();
-  ctx.globalAlpha = 0.06;
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
   for (let i = 1; i <= steps; i++) {
     const t = i / steps;
     const sc = 1 + (maxScale - 1) * t;
@@ -1271,7 +1313,6 @@ function applyHBlur(ctx, x, y, w, h, img, amount) {
 // ===== EXIF LAYOUT =====
 function drawExif(ctx, px, py, pw, ph, padExtra, txtPx, commentPx) {
   const e = S.exif;
-  const bottomY = py + ph + padExtra;
   const midY = py + ph + padExtra * 0.5;
 
   ctx.font = `italic ${txtPx}px ${S.txtFont}`;
