@@ -2,114 +2,148 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>✦ Framia</title>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#262623">
+<meta name="description" content="写真に余白と撮影情報（Exif）を添えて、色味を整え、PNGで保存できるブラウザアプリ。">
+<title>Framia ― 写真に余白と撮影情報を添える</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect width='22' height='22' rx='4' fill='%23262623'/%3E%3Crect x='3' y='3' width='16' height='16' rx='1' fill='none' stroke='%23f0dcc0' stroke-width='1.5'/%3E%3Crect x='6' y='6' width='10' height='7' fill='%23f0dcc0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+  /* ============================================================
+     Framia ― 暗室の作業台。
+     UIは無彩色に近いグレーに退き、色を持つのは写真だけにする。
+     選択状態だけが、Portraのハイライトと同じクリーム色で塗られる。
+     ============================================================ */
   :root {
-    --bg:          #f5f0e8;
-    --sidebar:     #faf7f2;
-    --panel:       #fff9f3;
-    --border:      #e2d8cc;
-    --border-soft: #ede6db;
-    --accent:      #b07d62;
-    --accent2:     #d4a57a;
-    --accent-soft: #f0e0d2;
-    --pink:        #d4919a;
-    --pink-soft:   #f7eaec;
-    --text:        #4a3f38;
-    --text-muted:  #a89888;
-    --text-light:  #c4b4a8;
-    --input-bg:    #fdf9f5;
-    --radius:      10px;
-    --radius-sm:   7px;
-    --shadow:      0 1px 4px rgba(100,70,50,0.08);
-    --shadow-md:   0 4px 16px rgba(100,70,50,0.12);
+    color-scheme: dark;
+
+    --bench:      #1c1c1a;   /* 作業台（プレビュー背景） */
+    --panel:      #262623;   /* 操作パネル */
+    --raised:     #30302c;   /* 入力・ボタンの地 */
+    --line:       #3d3c37;   /* 輪郭線 */
+    --line-soft:  #323130;   /* セクション区切り */
+    --ink:        #efe9df;   /* 本文 */
+    --dim:        #a8a296;   /* 補助テキスト（パネル上でコントラスト比6:1） */
+    --cream:      #f0dcc0;   /* 選択・主操作 */
+    --cream-ink:  #1d1a15;   /* クリーム地の上の文字 */
+    --cream-glow: rgba(240, 220, 192, 0.16);
+
+    --r-ctl: 6px;
+    --r-pill: 999px;
+
+    --font-ui: 'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', system-ui, sans-serif;
+    --font-display: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+
+    --sheet-h: 54dvh;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html { -webkit-text-size-adjust: 100%; }
+
   body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: var(--font-ui);
+    background: var(--bench);
+    color: var(--ink);
     display: flex;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+
+  :focus-visible {
+    outline: 2px solid var(--cream);
+    outline-offset: 2px;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
   }
 
   /* ===== SIDEBAR ===== */
   #sidebar {
-    width: 300px;
-    min-width: 300px;
-    background: var(--sidebar);
-    border-right: 1px solid var(--border);
+    width: 340px;
+    min-width: 340px;
+    background: var(--panel);
+    border-right: 1px solid var(--line-soft);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 2px 0 12px rgba(100,70,50,0.05);
+    min-height: 0;
   }
 
   #sidebar-header {
-    padding: 11px 16px 9px;
-    border-bottom: 1px solid var(--border-soft);
-    background: linear-gradient(135deg, #fdf8f0, #faf3ea);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 18px 14px;
   }
 
+  .mark { width: 26px; height: 26px; flex-shrink: 0; color: var(--cream); }
+
+  .brand { flex: 1; min-width: 0; }
+
   #sidebar-header h1 {
-    font-size: 14px;
-    font-family: 'Lora', Georgia, serif;
-    color: var(--accent);
-    letter-spacing: 0.04em;
-    font-weight: 500;
-    font-style: italic;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 21px;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
   }
 
   #sidebar-header .subtitle {
-    font-size: 10px;
-    color: var(--text-light);
-    margin-top: 2px;
-    font-weight: 300;
-    letter-spacing: 0.06em;
+    font-size: 11.5px;
+    color: var(--dim);
+    margin-top: 3px;
   }
+
+  .sheet-toggle {
+    display: none;
+    width: 40px; height: 40px;
+    align-items: center; justify-content: center;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctl);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .sheet-toggle:hover { background: var(--raised); }
+  .sheet-toggle svg { transition: transform 0.2s; }
+  .sheet-toggle[aria-expanded="false"] svg { transform: rotate(180deg); }
 
   /* ===== TABS ===== */
   #tab-bar {
     display: flex;
-    border-bottom: 1px solid var(--border);
-    background: #fdf9f4;
-    padding: 6px 10px 0;
-    gap: 4px;
+    gap: 22px;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--line-soft);
   }
 
   .tab-btn {
-    flex: 1;
-    padding: 6px 4px;
-    background: transparent;
-    color: var(--text-muted);
-    border: none;
+    padding: 10px 0 9px;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--dim);
+    border: 0;
     border-bottom: 2px solid transparent;
     cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11.5px;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    transition: all 0.18s;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  }
-
-  .tab-btn.active {
-    color: var(--accent);
-    border-bottom: 2px solid var(--accent);
+    font-size: 13px;
     font-weight: 500;
-    background: rgba(176,125,98,0.06);
+    transition: color 0.15s, border-color 0.15s;
   }
-
-  .tab-btn:hover:not(.active) {
-    color: var(--text);
-    background: rgba(176,125,98,0.04);
-  }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--cream); }
 
   /* ===== PANELS ===== */
   .tab-panel {
@@ -117,608 +151,621 @@
     flex-direction: column;
     overflow-y: auto;
     flex: 1;
-    padding-bottom: 16px;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
   }
-
   .tab-panel.active { display: flex; }
-
-  .tab-panel::-webkit-scrollbar { width: 3px; }
-  .tab-panel::-webkit-scrollbar-track { background: transparent; }
-  .tab-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .tab-panel::-webkit-scrollbar { width: 6px; }
+  .tab-panel::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
   /* ===== SECTION ===== */
   .section {
-    padding: 9px 14px 8px;
-    border-bottom: 1px solid var(--border-soft);
+    padding: 18px 18px 16px;
+    border-bottom: 1px solid var(--line-soft);
   }
+  .section:last-child { border-bottom: 0; }
 
   .section-title {
-    font-size: 9.5px;
-    letter-spacing: 0.1em;
-    color: var(--text-light);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    margin-bottom: 14px;
   }
 
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border-soft);
-    margin-left: 4px;
-  }
-
-  /* ===== DROP ZONE ===== */
-  #drop-zone {
-    border: 1.5px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 14px 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.22s;
-    color: var(--text-muted);
+  .hint {
     font-size: 11.5px;
+    color: var(--dim);
     line-height: 1.6;
-    background: var(--input-bg);
+    margin-top: 4px;
   }
 
+  /* ===== PHOTO PICKER ===== */
+  #drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    padding: 14px 10px;
+    border: 1px dashed var(--line);
+    border-radius: var(--r-ctl);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  #drop-zone small { font-size: 11.5px; font-weight: 400; color: var(--dim); }
   #drop-zone:hover, #drop-zone.drag-over {
-    border-color: var(--accent2);
-    color: var(--accent);
-    background: var(--accent-soft);
+    border-color: var(--cream);
+    background: var(--cream-glow);
   }
-
-  #drop-zone .icon { font-size: 22px; margin-bottom: 4px; display: block; }
   #file-input { display: none; }
+
+  #exif-info {
+    margin-top: 10px;
+    padding: 9px 11px;
+    background: var(--raised);
+    border-radius: var(--r-ctl);
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--dim);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
 
   /* ===== SLIDER ROW ===== */
   .row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
+    column-gap: 10px;
+    margin-bottom: 8px;
   }
+  .row:last-child { margin-bottom: 0; }
 
-  .row label {
-    min-width: 68px;
-    color: var(--text-muted);
-    font-size: 11px;
-    flex-shrink: 0;
-    font-weight: 400;
-  }
+  .row > label { font-size: 12.5px; color: var(--ink); }
 
-  .row input[type=range] {
-    flex: 1;
-    -webkit-appearance: none;
-    height: 4px;
-    background: var(--border);
-    border-radius: 4px;
-    outline: none;
-  }
-
-  .row input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    transition: transform 0.12s, box-shadow 0.12s;
-    box-shadow: 0 1px 4px rgba(176,125,98,0.3);
-  }
-
-  .row input[type=range]::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 2px 8px rgba(176,125,98,0.45);
-  }
+  .num { display: inline-flex; align-items: baseline; gap: 2px; justify-self: end; }
+  .unit { font-size: 11px; color: var(--dim); min-width: 12px; }
 
   .row .val {
-    width: 42px;
-    min-width: 42px;
-    text-align: center;
-    color: var(--accent);
-    font-size: 11px;
+    width: 52px;
+    text-align: right;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    padding: 2px 0;
+    font-size: 13px;
     font-weight: 500;
-    background: var(--input-bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 3px 4px;
+    font-variant-numeric: tabular-nums;
     -moz-appearance: textfield;
+    appearance: textfield;
     outline: none;
-    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s;
   }
-  .row .val:focus { border-color: var(--accent2); }
+  .row .val:hover { border-bottom-color: var(--dim); }
+  .row .val:focus { border-bottom-color: var(--cream); }
   .row .val::-webkit-inner-spin-button,
   .row .val::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  input[type=range] {
+    grid-column: 1 / -1;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 24px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    --fill: 0%;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--cream) var(--fill), var(--line) var(--fill));
+  }
+  input[type=range]::-moz-range-track { height: 3px; border-radius: 2px; background: var(--line); }
+  input[type=range]::-moz-range-progress { height: 3px; border-radius: 2px; background: var(--cream); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    margin-top: -6.5px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--cream);
+    box-shadow: 0 0 0 0 var(--cream-glow);
+    transition: box-shadow 0.15s;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--cream);
+  }
+  input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 5px var(--cream-glow); }
+  input[type=range]:active::-webkit-slider-thumb { box-shadow: 0 0 0 8px var(--cream-glow); }
+  input[type=range]:focus-visible { outline-offset: 4px; border-radius: 4px; }
 
   /* ===== COLOR ROW ===== */
   .color-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
+    justify-content: space-between;
+    margin-bottom: 8px;
   }
-
-  .color-row label { flex: 1; color: var(--text-muted); font-size: 11px; }
+  .color-row:last-child { margin-bottom: 0; }
+  .color-row label { font-size: 12.5px; }
 
   .color-row input[type=color] {
-    width: 36px;
-    height: 24px;
-    border: 1.5px solid var(--border);
-    border-radius: 6px;
-    padding: 2px;
-    background: var(--input-bg);
+    width: 44px; height: 28px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctl);
+    background: var(--raised);
     cursor: pointer;
   }
+  .color-row input[type=color]::-webkit-color-swatch-wrapper { padding: 3px; }
+  .color-row input[type=color]::-webkit-color-swatch { border: 0; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28); }
+  .color-row input[type=color]::-moz-color-swatch { border: 0; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28); }
 
-  /* ===== GRID BUTTONS ===== */
-  .grid-2x2,
-  .grid-2x3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-    margin-bottom: 8px;
-  }
-
-  /* 2列グリッドで横幅いっぱいに置くボタン（奇数個目用） */
-  .grid-btn.span-2 { grid-column: 1 / -1; }
+  /* ===== CHOICE BUTTONS（レイアウト・グレード） ===== */
+  .grid-3, .grid-2 { display: grid; gap: 6px; margin-bottom: 14px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
 
   .grid-btn {
-    padding: 6px 4px;
-    background: var(--input-bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10.5px;
-    text-align: center;
-    transition: all 0.16s;
-    line-height: 1.4;
-    box-shadow: var(--shadow);
-  }
-
-  .grid-btn:hover {
-    border-color: var(--accent2);
-    color: var(--text);
-    background: var(--accent-soft);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-  }
-
-  .grid-btn.active {
-    background: linear-gradient(135deg, #f5e6dc, #f0ddd0);
-    border-color: var(--accent);
-    color: var(--accent);
-    font-weight: 500;
-    box-shadow: 0 2px 8px rgba(176,125,98,0.2);
-  }
-
-  /* ===== FONT SELECT ===== */
-  .select-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .select-row label { min-width: 68px; color: var(--text-muted); font-size: 11px; }
-
-  .select-row select {
-    flex: 1;
-    background: var(--input-bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    padding: 5px 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    outline: none;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-  }
-
-  .select-row select:focus { border-color: var(--accent2); }
-
-  /* ===== TEXTAREA ===== */
-  textarea {
-    width: 100%;
-    background: var(--input-bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    padding: 6px 9px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11.5px;
-    resize: vertical;
-    min-height: 44px;
-    outline: none;
-    margin-bottom: 6px;
-    line-height: 1.5;
-    box-shadow: var(--shadow);
-  }
-
-  textarea:focus { border-color: var(--accent2); }
-
-  /* ===== TOGGLE BUTTONS ===== */
-  .toggle-group {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 6px;
-  }
-
-  .toggle-btn {
-    flex: 1;
-    padding: 5px;
-    background: var(--input-bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10.5px;
-    text-align: center;
-    transition: all 0.16s;
-    box-shadow: var(--shadow);
-  }
-
-  .toggle-btn:hover { border-color: var(--accent2); color: var(--text); }
-
-  .toggle-btn.active {
-    background: linear-gradient(135deg, #f5e6dc, #f0ddd0);
-    border-color: var(--accent);
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  /* ===== OUTPUT SIZE ===== */
-  .preset-row {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 6px;
-    flex-wrap: wrap;
-  }
-
-  .preset-btn {
-    padding: 5px 11px;
-    background: var(--input-bg);
-    border: 1.5px solid var(--border);
-    border-radius: 20px;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10.5px;
-    transition: all 0.16s;
-    box-shadow: var(--shadow);
-  }
-
-  .preset-btn:hover { border-color: var(--accent2); color: var(--text); background: var(--accent-soft); }
-  .preset-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(176,125,98,0.35);
-  }
-
-  .custom-px-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-
-  .custom-px-row label { color: var(--text-muted); font-size: 11px; }
-
-  .custom-px-row input[type=number] {
-    width: 80px;
-    background: var(--input-bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    padding: 5px 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    outline: none;
-    box-shadow: var(--shadow);
-  }
-
-  .custom-px-row input[type=number]:focus { border-color: var(--accent2); }
-
-  /* ===== DOWNLOAD BUTTON ===== */
-  #btn-download {
-    display: block;
-    width: calc(100% - 24px);
-    margin: 6px 12px 6px;
-    padding: 10px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border: none;
-    border-radius: var(--radius);
-    color: #fff;
-    font-family: 'Lora', Georgia, serif;
-    font-size: 12.5px;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.22s;
-    font-weight: 500;
-    font-style: italic;
-    box-shadow: 0 3px 12px rgba(176,125,98,0.3);
-  }
-
-  #btn-download:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(176,125,98,0.4);
-    background: linear-gradient(135deg, #c08a72, #ddb88a);
-  }
-
-  #btn-download:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-
-  /* ===== PREVIEW ===== */
-  #preview-area {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #ede8e0;
-    background-image:
-      radial-gradient(circle at 20% 30%, rgba(212,165,122,0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(212,145,154,0.07) 0%, transparent 50%);
-    overflow: auto;
-    padding: 28px;
-    position: relative;
+    gap: 7px;
+    min-height: 40px;
+    padding: 9px 6px 8px;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctl);
+    color: var(--dim);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
+  .grid-btn small { display: block; font-size: 10.5px; }
+  .grid-btn:hover { color: var(--ink); border-color: var(--dim); }
+  .grid-btn.active {
+    background: var(--cream);
+    border-color: var(--cream);
+    color: var(--cream-ink);
+    font-weight: 500;
+  }
+  .grid-btn.span-2 { grid-column: 1 / -1; }
+
+  /* 配置の見取り図（写真・余白・文字の位置を縮小して見せる） */
+  .glyph { width: 46px; height: 35px; }
+  .glyph .paper { fill: none; stroke: currentColor; stroke-opacity: 0.55; stroke-width: 1; }
+  .glyph .photo { fill: currentColor; fill-opacity: 0.28; }
+  .glyph .cap { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+
+  /* グレードの色味見本（暗部／明部の傾き） */
+  .chip {
+    display: inline-block;
+    width: 30px; height: 10px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--a) 50%, var(--b) 50%);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  }
+  .grade-name { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  #grade-grid .grid-btn { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 9px 12px; text-align: left; }
+  #grade-grid .grade-name { align-items: flex-start; }
+  #grade-grid .chip { flex-shrink: 0; }
+
+  /* ===== SELECT / TEXTAREA ===== */
+  .field { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .field > label { font-size: 12.5px; flex-shrink: 0; }
+
+  select {
+    flex: 1;
+    max-width: 200px;
+    min-height: 32px;
+    padding: 5px 8px;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctl);
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctl);
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  textarea::placeholder { color: var(--dim); }
+  select:hover, textarea:hover, .custom-px-row input:hover { border-color: var(--dim); }
+  select:focus-visible, textarea:focus-visible, .custom-px-row input:focus-visible {
+    outline: none; border-color: var(--cream); box-shadow: 0 0 0 3px var(--cream-glow);
+  }
+
+  /* ===== SEGMENTED TOGGLE ===== */
+  .opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .opt:last-child { margin-bottom: 0; }
+  .opt > span { font-size: 12.5px; }
+
+  .toggle-group {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctl);
+    overflow: hidden;
+  }
+  .toggle-btn {
+    padding: 6px 14px;
+    min-height: 32px;
+    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--line);
+    color: var(--dim);
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .toggle-btn:last-child { border-right: 0; }
+  .toggle-btn:hover { color: var(--ink); background: var(--raised); }
+  .toggle-btn.active { background: var(--cream); color: var(--cream-ink); font-weight: 500; }
+
+  /* ===== SAVE SIZE ===== */
+  .preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  .preset-btn {
+    min-height: 32px;
+    padding: 5px 13px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    color: var(--dim);
+    cursor: pointer;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .preset-btn:hover { color: var(--ink); border-color: var(--dim); }
+  .preset-btn.active { background: var(--cream); border-color: var(--cream); color: var(--cream-ink); font-weight: 500; }
+
+  .custom-px-row { display: flex; align-items: center; gap: 8px; }
+  .custom-px-row label { font-size: 12.5px; }
+  .custom-px-row input[type=number] {
+    width: 92px;
+    min-height: 32px;
+    padding: 5px 8px;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--r-ctl);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .custom-px-row input::placeholder { color: var(--dim); }
+  .custom-px-row .note { font-size: 11.5px; color: var(--dim); }
+
+  /* ===== DOWNLOAD ===== */
+  .dock {
+    padding: 12px 18px calc(16px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line-soft);
+    background: var(--panel);
+  }
+
+  #btn-download {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 11px;
+    background: var(--cream);
+    border: 0;
+    border-radius: var(--r-ctl);
+    color: var(--cream-ink);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    transition: background 0.15s, transform 0.1s;
+  }
+  #btn-download:hover:not(:disabled) { background: #f7e8d2; }
+  #btn-download:active:not(:disabled) { transform: translateY(1px); }
+  #btn-download:disabled { background: var(--raised); color: var(--dim); cursor: not-allowed; }
+
+  /* ===== BENCH（プレビュー） ===== */
+  #preview-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: 36px;
+    position: relative;
+    background: var(--bench);
+  }
+  #preview-area.drag-over { outline: 2px dashed var(--cream); outline-offset: -14px; }
 
   #canvas-wrap {
     position: relative;
     max-width: 100%;
-    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
   }
+
+  @keyframes lay-down { from { opacity: 0; transform: translateY(10px) scale(0.992); } }
+  #canvas-wrap { animation: lay-down 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  .print { position: relative; max-width: 100%; }
 
   #preview-canvas {
-    max-width: 100%;
-    max-height: calc(100vh - 80px);
     display: block;
-    box-shadow: 0 12px 48px rgba(100,70,50,0.25), 0 2px 8px rgba(100,70,50,0.1);
-    border-radius: 2px;
+    max-width: 100%;
+    max-height: calc(100vh - 150px);
+    max-height: calc(100dvh - 150px);
+    border-radius: 1px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05), 0 22px 56px rgba(0, 0, 0, 0.55);
   }
 
+  #compare-badge {
+    position: absolute;
+    top: 10px; left: 10px;
+    padding: 3px 9px;
+    background: rgba(20, 20, 18, 0.78);
+    border-radius: var(--r-ctl);
+    font-size: 11.5px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+  }
+  #compare-badge.show { opacity: 1; }
+
+  .bench-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  #readout {
+    font-size: 12px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  #btn-compare {
+    min-height: 34px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 12px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  #btn-compare:hover { border-color: var(--dim); }
+  #btn-compare.holding { background: var(--cream); border-color: var(--cream); color: var(--cream-ink); }
+
+  /* ===== EMPTY STATE ===== */
   #preview-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    color: var(--text-light);
-    font-size: 13px;
+    gap: 14px;
+    max-width: 340px;
     text-align: center;
-    font-family: 'Lora', Georgia, serif;
-    font-style: italic;
   }
 
-  #preview-placeholder .big { font-size: 44px; opacity: 0.5; }
+  .print-demo { width: min(250px, 62vw); height: auto; margin-bottom: 6px; color: var(--cream); }
+  .print-demo .pd-paper { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .print-demo .pd-photo { fill: var(--raised); stroke: var(--line); stroke-width: 1; }
+  .print-demo .pd-cap { fill: none; stroke: var(--dim); stroke-width: 3; stroke-linecap: round; }
+
+  #preview-placeholder h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.45;
+  }
+  #preview-placeholder p { color: var(--dim); font-size: 13px; line-height: 1.8; }
+  #preview-placeholder p span { display: inline-block; }
+
+  .btn-pick {
+    margin-top: 6px;
+    min-height: 44px;
+    padding: 10px 26px;
+    background: var(--cream);
+    border: 0;
+    border-radius: var(--r-ctl);
+    color: var(--cream-ink);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-pick:hover { background: #f7e8d2; }
+  .btn-pick:active { transform: translateY(1px); }
+
+  /* 起動時に一度だけ、紙が引かれて写真と文字が置かれる */
+  @keyframes pd-draw { from { stroke-dashoffset: 1; } }
+  @keyframes pd-in   { from { opacity: 0; } }
+  .print-demo .pd-paper { stroke-dasharray: 1; animation: pd-draw 1.1s cubic-bezier(0.3, 0.7, 0.2, 1) both; }
+  .print-demo .pd-photo { animation: pd-in 0.5s 0.8s both; }
+  .print-demo .pd-cap   { animation: pd-in 0.5s 1.15s both; }
 
   /* ===== TOAST ===== */
   #toast {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    top: 16px;
+    left: 50%;
+    transform: translate(-50%, -8px);
+    width: max-content;
+    max-width: min(90vw, 360px);
     padding: 9px 15px;
-    font-size: 11.5px;
-    color: var(--accent);
+    text-wrap: balance;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--ink);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s, transform 0.3s;
-    transform: translateY(6px);
+    transition: opacity 0.25s, transform 0.25s;
     z-index: 999;
-    max-width: 260px;
-    box-shadow: var(--shadow-md);
-    font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
   }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-  #toast.show { opacity: 1; transform: translateY(0); }
-
-  /* ===== EXIF INFO ===== */
-  #exif-info {
-    font-size: 10px;
-    color: var(--text-muted);
-    line-height: 1.7;
-    margin-top: 8px;
-    padding: 7px 10px;
-    background: var(--accent-soft);
-    border-radius: var(--radius-sm);
-    border-left: 2px solid var(--accent2);
-  }
-
-  /* ===== SECTION DIVIDER ===== */
-  .spacer { height: 4px; }
-
-  /* ===== MOBILE LAYOUT ===== */
+  /* ===== 狭い画面：写真を上、操作を下のシートに ===== */
   @media (max-width: 768px) {
-    body {
-      flex-direction: column;
-      height: 100dvh;
-      overflow: hidden;
-    }
+    body { flex-direction: column; }
 
-    /* プレビューエリアを上に、サイドバーを下に */
-    #preview-area {
-      order: 1;
-      flex: 1;
-      min-height: 0;
-      padding: 12px;
-    }
+    #preview-area { order: 1; flex: 1; min-height: 0; padding: 14px 14px 10px; }
 
     #sidebar {
       order: 2;
       width: 100%;
-      min-width: unset;
-      height: auto;
-      max-height: 52dvh;
-      border-right: none;
-      border-top: 1px solid var(--border);
-      box-shadow: 0 -4px 16px rgba(100,70,50,0.08);
+      min-width: 0;
+      max-height: var(--sheet-h);
+      border-right: 0;
+      border-top: 1px solid var(--line);
       border-radius: 16px 16px 0 0;
-      overflow: hidden;
       flex-shrink: 0;
     }
 
-    #sidebar-header {
-      padding: 10px 16px 8px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    #sidebar-header h1 { font-size: 13px; }
+    #sidebar-header { padding: 10px 14px 8px; }
     #sidebar-header .subtitle { display: none; }
+    #sidebar-header h1 { font-size: 19px; }
+    .sheet-toggle { display: inline-flex; }
 
-    /* ドラッグハンドル風の装飾 */
-    #sidebar-header::before {
-      content: '';
-      display: block;
-      position: absolute;
-      top: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 36px;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-    }
+    #tab-bar { padding: 0 14px; }
+    .tab-btn { padding: 11px 0 10px; }
 
-    #sidebar { position: relative; }
+    .section { padding: 16px 14px 14px; }
+    .dock { padding: 10px 14px calc(12px + env(safe-area-inset-bottom)); }
 
-    #tab-bar {
-      padding: 4px 10px 0;
-    }
+    input[type=range] { height: 32px; }
+    input[type=range]::-webkit-slider-runnable-track { height: 4px; }
+    input[type=range]::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -9px; }
+    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; }
+    .row .val { width: 56px; font-size: 14px; padding: 4px 0; }
 
-    .tab-panel {
-      padding-bottom: 8px;
-    }
+    .grid-btn, .toggle-btn, .preset-btn { min-height: 44px; }
+    .color-row input[type=color] { width: 52px; height: 34px; }
+    select, .custom-px-row input[type=number] { min-height: 40px; }
 
-    /* セクションを少し詰める */
-    .section {
-      padding: 8px 14px 7px;
-    }
+    #preview-canvas { max-height: calc(100dvh - var(--sheet-h) - 96px); }
+    #btn-compare { min-height: 40px; }
 
-    /* スライダーを太く・タッチしやすく */
-    .row input[type=range] {
-      height: 6px;
-    }
+    body.sheet-collapsed { --sheet-h: 136px; }
+    body.sheet-collapsed #tab-bar,
+    body.sheet-collapsed .tab-panel { display: none; }
 
-    .row input[type=range]::-webkit-slider-thumb {
-      width: 20px;
-      height: 20px;
-    }
+    #toast { top: 10px; }
+  }
 
-    /* 数値入力欄を少し大きく */
-    .row .val {
-      width: 48px;
-      min-width: 48px;
-      font-size: 13px;
-      padding: 4px 5px;
-    }
-
-    /* グリッドボタンを少し大きく */
-    .grid-btn {
-      padding: 8px 4px;
-      font-size: 11px;
-    }
-
-    /* トグルボタン */
-    .toggle-btn {
-      padding: 7px;
-      font-size: 11px;
-    }
-
-    /* ダウンロードボタン */
-    #btn-download {
-      margin: 6px 12px 10px;
-      padding: 12px;
-      font-size: 13px;
-    }
-
-    /* キャンバス */
-    #preview-canvas {
-      max-height: calc(48dvh - 60px);
-    }
-
-    /* ドロップゾーン */
-    #drop-zone {
-      padding: 10px;
-      font-size: 12px;
-    }
-
-    #drop-zone .icon { font-size: 18px; margin-bottom: 2px; }
-
-    /* プリセットボタン */
-    .preset-btn {
-      padding: 6px 13px;
-      font-size: 11px;
-    }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
 
-<div id="sidebar">
-  <div id="sidebar-header">
-    <h1>✦ Framia</h1>
-    <div class="subtitle">frame the moment</div>
+<aside id="sidebar" aria-label="設定">
+  <header id="sidebar-header">
+    <svg class="mark" viewBox="0 0 26 26" aria-hidden="true">
+      <rect x="3" y="3" width="20" height="20" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <rect x="7" y="7" width="12" height="8.5" fill="currentColor"/>
+    </svg>
+    <div class="brand">
+      <h1>Framia</h1>
+      <div class="subtitle">写真に余白と撮影情報を添える</div>
+    </div>
+    <button type="button" class="sheet-toggle" id="sheet-toggle" aria-expanded="true" aria-controls="tab-bar tab-basic tab-effect" aria-label="設定パネルを閉じる">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l5 5 5-5"/></svg>
+    </button>
+  </header>
+
+  <div id="tab-bar" role="tablist" aria-label="設定の種類">
+    <button class="tab-btn active" data-tab="basic" role="tab" id="tabbtn-basic" aria-selected="true" aria-controls="tab-basic">基本設定</button>
+    <button class="tab-btn" data-tab="effect" role="tab" id="tabbtn-effect" aria-selected="false" aria-controls="tab-effect">エフェクト</button>
   </div>
 
-  <div id="tab-bar">
-    <button class="tab-btn active" data-tab="basic">✦ 基本設定</button>
-    <button class="tab-btn" data-tab="effect">✿ エフェクト</button>
-  </div>
+  <!-- ===== TAB 1: 基本設定 ===== -->
+  <div class="tab-panel active" id="tab-basic" role="tabpanel" aria-labelledby="tabbtn-basic">
 
-  <!-- ===== TAB 1: 基本 ===== -->
-  <div class="tab-panel active" id="tab-basic">
-
-    <!-- 画像 -->
-    <div class="section">
-      <div class="section-title">📷 画像</div>
-      <div id="drop-zone">
-        <span class="icon">🖼️</span>
-        ドラッグ＆ドロップ<br>
-        <small>または クリックして選択</small>
-      </div>
-      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp">
+    <section class="section">
+      <h2 class="section-title">写真</h2>
+      <button type="button" id="drop-zone">
+        <span id="dz-main">写真を選ぶ</span>
+        <small>またはここにドロップ</small>
+      </button>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" aria-label="写真ファイル">
       <div id="exif-info" style="display:none"></div>
-    </div>
+    </section>
 
-    <!-- 余白 & 枠線 -->
-    <div class="section">
-      <div class="section-title">⬜ 余白 &amp; 枠線</div>
-      <div class="row"><label>上下余白</label><input type="range" id="pad-tb" min="0" max="30" value="4" step="0.5"><input type="number" class="val" id="v-pad-tb" value="4" min="0" max="30" step="0.5"><span style="color:var(--text-muted);font-size:10px">%</span></div>
-      <div class="row"><label>左右余白</label><input type="range" id="pad-lr" min="0" max="30" value="4" step="0.5"><input type="number" class="val" id="v-pad-lr" value="4" min="0" max="30" step="0.5"><span style="color:var(--text-muted);font-size:10px">%</span></div>
-      <div class="row"><label>下余白補正</label><input type="range" id="pad-extra" min="0" max="20" value="6" step="0.5"><input type="number" class="val" id="v-pad-extra" value="6" min="0" max="20" step="0.5"><span style="color:var(--text-muted);font-size:10px">%</span></div>
-      <div class="row"><label>枠線太さ</label><input type="range" id="border-w" min="0" max="2" value="0" step="0.05"><input type="number" class="val" id="v-border-w" value="0" min="0" max="2" step="0.05"><span style="color:var(--text-muted);font-size:10px">%</span></div>
-      <div class="color-row"><label>余白色</label><input type="color" id="bg-color" value="#ffffff"></div>
-      <div class="color-row"><label>枠線色</label><input type="color" id="border-color" value="#cccccc"></div>
-    </div>
+    <section class="section">
+      <h2 class="section-title">余白と枠線</h2>
+      <div class="row"><label for="pad-tb">上下の余白</label><span class="num"><input type="number" class="val" id="v-pad-tb" value="4" min="0" max="30" step="0.5" aria-label="上下の余白（数値）"><span class="unit">%</span></span><input type="range" id="pad-tb" min="0" max="30" value="4" step="0.5"></div>
+      <div class="row"><label for="pad-lr">左右の余白</label><span class="num"><input type="number" class="val" id="v-pad-lr" value="4" min="0" max="30" step="0.5" aria-label="左右の余白（数値）"><span class="unit">%</span></span><input type="range" id="pad-lr" min="0" max="30" value="4" step="0.5"></div>
+      <div class="row"><label for="pad-extra">下の追加余白</label><span class="num"><input type="number" class="val" id="v-pad-extra" value="6" min="0" max="20" step="0.5" aria-label="下の追加余白（数値）"><span class="unit">%</span></span><input type="range" id="pad-extra" min="0" max="20" value="6" step="0.5"></div>
+      <div class="row"><label for="border-w">枠線の太さ</label><span class="num"><input type="number" class="val" id="v-border-w" value="0" min="0" max="2" step="0.05" aria-label="枠線の太さ（数値）"><span class="unit">%</span></span><input type="range" id="border-w" min="0" max="2" value="0" step="0.05"></div>
+      <div class="color-row"><label for="bg-color">余白の色</label><input type="color" id="bg-color" value="#ffffff"></div>
+      <div class="color-row"><label for="border-color">枠線の色</label><input type="color" id="border-color" value="#cccccc"></div>
+    </section>
 
-    <!-- Exifテキスト -->
-    <div class="section">
-      <div class="section-title">📋 Exifテキスト</div>
-      <div class="grid-2x3" id="layout-grid">
-        <button class="grid-btn active" data-layout="0">左下2行</button>
-        <button class="grid-btn" data-layout="1">中央Shot on</button>
-        <button class="grid-btn" data-layout="2">左右4点</button>
-        <button class="grid-btn" data-layout="3">右下2行</button>
-        <button class="grid-btn" data-layout="4">中央1行</button>
-        <button class="grid-btn" data-layout="5">左右シンプル</button>
+    <section class="section">
+      <h2 class="section-title">撮影情報の表示</h2>
+      <div class="grid-3" id="layout-grid" role="group" aria-label="撮影情報の配置">
+        <button type="button" class="grid-btn active" data-layout="0" aria-pressed="true">
+          <svg class="glyph" viewBox="0 0 46 35" aria-hidden="true"><rect class="paper" x="1" y="1" width="44" height="33" rx="1"/><rect class="photo" x="5" y="5" width="36" height="19"/><path class="cap" d="M5 27.5h15M5 30.5h10"/></svg>
+          左下2行
+        </button>
+        <button type="button" class="grid-btn" data-layout="1" aria-pressed="false">
+          <svg class="glyph" viewBox="0 0 46 35" aria-hidden="true"><rect class="paper" x="1" y="1" width="44" height="33" rx="1"/><rect class="photo" x="5" y="5" width="36" height="19"/><path class="cap" d="M17 27.5h12M13 30.5h20"/></svg>
+          中央 Shot on
+        </button>
+        <button type="button" class="grid-btn" data-layout="2" aria-pressed="false">
+          <svg class="glyph" viewBox="0 0 46 35" aria-hidden="true"><rect class="paper" x="1" y="1" width="44" height="33" rx="1"/><rect class="photo" x="5" y="5" width="36" height="19"/><path class="cap" d="M5 27.5h12M5 30.5h8M29 27.5h12M33 30.5h8"/></svg>
+          左右4点
+        </button>
+        <button type="button" class="grid-btn" data-layout="3" aria-pressed="false">
+          <svg class="glyph" viewBox="0 0 46 35" aria-hidden="true"><rect class="paper" x="1" y="1" width="44" height="33" rx="1"/><rect class="photo" x="5" y="5" width="36" height="19"/><path class="cap" d="M26 27.5h15M31 30.5h10"/></svg>
+          右下2行
+        </button>
+        <button type="button" class="grid-btn" data-layout="4" aria-pressed="false">
+          <svg class="glyph" viewBox="0 0 46 35" aria-hidden="true"><rect class="paper" x="1" y="1" width="44" height="33" rx="1"/><rect class="photo" x="5" y="5" width="36" height="19"/><path class="cap" d="M11 29h24"/></svg>
+          中央1行
+        </button>
+        <button type="button" class="grid-btn" data-layout="5" aria-pressed="false">
+          <svg class="glyph" viewBox="0 0 46 35" aria-hidden="true"><rect class="paper" x="1" y="1" width="44" height="33" rx="1"/><rect class="photo" x="5" y="5" width="36" height="19"/><path class="cap" d="M5 29h12M32 29h9"/></svg>
+          左右シンプル
+        </button>
       </div>
-      <div class="row"><label>文字サイズ</label><input type="range" id="txt-size" min="0.5" max="8" value="2.5" step="0.1"><input type="number" class="val" id="v-txt-size" value="2.5" min="0.5" max="8" step="0.1"><span style="color:var(--text-muted);font-size:10px">%</span></div>
-      <div class="select-row">
-        <label>フォント</label>
+      <div class="row"><label for="txt-size">文字サイズ</label><span class="num"><input type="number" class="val" id="v-txt-size" value="2.5" min="0.5" max="8" step="0.1" aria-label="文字サイズ（数値）"><span class="unit">%</span></span><input type="range" id="txt-size" min="0.5" max="8" value="2.5" step="0.1"></div>
+      <div class="field" style="margin-top:12px">
+        <label for="font-sel">フォント</label>
         <select id="font-sel">
           <option value="Georgia, serif">Georgia</option>
           <option value="'Noto Serif JP', serif">Noto Serif JP</option>
@@ -726,109 +773,130 @@
           <option value="'Helvetica Neue', sans-serif">Helvetica Neue</option>
         </select>
       </div>
-      <div class="color-row"><label>文字色</label><input type="color" id="txt-color" value="#333333"></div>
-    </div>
+      <div class="color-row"><label for="txt-color">文字の色</label><input type="color" id="txt-color" value="#333333"></div>
+    </section>
 
-    <!-- コメント -->
-    <div class="section">
-      <div class="section-title">✏️ コメント</div>
-      <textarea id="comment-text" placeholder="タイトル・コメントを入力（空欄で非表示）" rows="2"></textarea>
-      <div class="row" style="gap:4px;margin-bottom:4px;">
-        <span style="color:var(--text-muted);font-size:10px;min-width:40px;">位置</span>
-        <div class="toggle-group" style="flex:1;margin:0">
-          <button class="toggle-btn active" id="comment-pos-above" data-pos="above">Exifの上</button>
-          <button class="toggle-btn" id="comment-pos-below" data-pos="below">Exifの下</button>
+    <section class="section">
+      <h2 class="section-title">コメント</h2>
+      <label class="sr-only" for="comment-text">コメント</label>
+      <textarea id="comment-text" placeholder="タイトルやひとことを入力（空欄なら表示しません）" rows="2"></textarea>
+      <div class="opt">
+        <span id="lbl-cpos">位置</span>
+        <div class="toggle-group" role="group" aria-labelledby="lbl-cpos">
+          <button type="button" class="toggle-btn active" id="comment-pos-above" data-pos="above" aria-pressed="true">撮影情報の上</button>
+          <button type="button" class="toggle-btn" id="comment-pos-below" data-pos="below" aria-pressed="false">撮影情報の下</button>
         </div>
       </div>
-      <div class="row" style="gap:4px;">
-        <span style="color:var(--text-muted);font-size:10px;min-width:40px;">サイズ</span>
-        <div class="toggle-group" style="flex:1;margin:0">
-          <button class="toggle-btn active" id="comment-sz-lg" data-sz="large">大きめ</button>
-          <button class="toggle-btn" id="comment-sz-sm" data-sz="same">同じ</button>
+      <div class="opt">
+        <span id="lbl-csz">サイズ</span>
+        <div class="toggle-group" role="group" aria-labelledby="lbl-csz">
+          <button type="button" class="toggle-btn active" id="comment-sz-lg" data-sz="large" aria-pressed="true">大きめ</button>
+          <button type="button" class="toggle-btn" id="comment-sz-sm" data-sz="same" aria-pressed="false">撮影情報と同じ</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 出力 -->
-    <div class="section">
-      <div class="section-title">💾 出力サイズ</div>
-      <div class="preset-row">
-        <button class="preset-btn" data-px="540">540</button>
-        <button class="preset-btn" data-px="720">720</button>
-        <button class="preset-btn active" data-px="1080">1080</button>
-        <button class="preset-btn" data-px="1440">1440</button>
-        <button class="preset-btn" data-px="2048">2048</button>
-        <button class="preset-btn" data-px="0">元サイズ</button>
+    <section class="section">
+      <h2 class="section-title">保存サイズ</h2>
+      <div class="preset-row" role="group" aria-label="長辺のピクセル数">
+        <button type="button" class="preset-btn" data-px="540" aria-pressed="false">540</button>
+        <button type="button" class="preset-btn" data-px="720" aria-pressed="false">720</button>
+        <button type="button" class="preset-btn active" data-px="1080" aria-pressed="true">1080</button>
+        <button type="button" class="preset-btn" data-px="1440" aria-pressed="false">1440</button>
+        <button type="button" class="preset-btn" data-px="2048" aria-pressed="false">2048</button>
+        <button type="button" class="preset-btn" data-px="0" aria-pressed="false">元のサイズ</button>
       </div>
       <div class="custom-px-row">
-        <label>カスタム</label>
-        <input type="number" id="custom-px" placeholder="例: 1920" min="100" max="8000">
-        <span style="color:var(--text-muted);font-size:10px">px（長辺）</span>
+        <label for="custom-px">数値で指定</label>
+        <input type="number" id="custom-px" placeholder="1920" min="100" max="8000">
+        <span class="note">px（長辺）</span>
       </div>
-    </div>
+    </section>
 
   </div><!-- /tab-basic -->
 
   <!-- ===== TAB 2: エフェクト ===== -->
-  <div class="tab-panel" id="tab-effect">
+  <div class="tab-panel" id="tab-effect" role="tabpanel" aria-labelledby="tabbtn-effect">
 
-    <!-- カラーグレード -->
-    <div class="section">
-      <div class="section-title">🎨 カラーグレード</div>
-      <div class="grid-2x2" id="grade-grid">
-        <button class="grid-btn active" data-grade="none">なし</button>
-        <button class="grid-btn" data-grade="cinema">シネマ調<br><small style="color:var(--text-muted)">Teal&amp;Orange</small></button>
-        <button class="grid-btn" data-grade="film">フィルム調<br><small style="color:var(--text-muted)">Kodak風</small></button>
-        <button class="grid-btn" data-grade="noir">ノワール調<br><small style="color:var(--text-muted)">ハイコントラスト</small></button>
-        <button class="grid-btn span-2" data-grade="portra">Portra調<br><small style="color:var(--text-muted)">Portra 400風・肌色やわらか</small></button>
+    <section class="section">
+      <h2 class="section-title">カラーグレード</h2>
+      <div class="grid-2" id="grade-grid" role="group" aria-label="カラーグレード" style="margin-bottom:14px">
+        <button type="button" class="grid-btn active" data-grade="none" aria-pressed="true">
+          <span class="chip" style="--a:#8b8b86;--b:#d8d6d0" aria-hidden="true"></span>
+          <span class="grade-name">なし</span>
+        </button>
+        <button type="button" class="grid-btn" data-grade="cinema" aria-pressed="false">
+          <span class="chip" style="--a:#3f8f93;--b:#e59a52" aria-hidden="true"></span>
+          <span class="grade-name">シネマ調<small>Teal &amp; Orange</small></span>
+        </button>
+        <button type="button" class="grid-btn" data-grade="film" aria-pressed="false">
+          <span class="chip" style="--a:#6b5a47;--b:#d9bf94" aria-hidden="true"></span>
+          <span class="grade-name">フィルム調<small>Kodak風</small></span>
+        </button>
+        <button type="button" class="grid-btn" data-grade="noir" aria-pressed="false">
+          <span class="chip" style="--a:#222222;--b:#e6e6e6" aria-hidden="true"></span>
+          <span class="grade-name">ノワール調<small>ハイコントラスト</small></span>
+        </button>
+        <button type="button" class="grid-btn span-2" data-grade="portra" aria-pressed="false">
+          <span class="chip" style="--a:#d9a98a;--b:#f4e6c4" aria-hidden="true"></span>
+          <span class="grade-name">Portra調<small>Portra 400風・肌色やわらか</small></span>
+        </button>
       </div>
-      <div class="row"><label>強度</label><input type="range" id="grade-str" min="0" max="100" value="60"><input type="number" class="val" id="v-grade-str" value="60" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px">%</span></div>
-    </div>
+      <div class="row"><label for="grade-str">強度</label><span class="num"><input type="number" class="val" id="v-grade-str" value="60" min="0" max="100" step="1" aria-label="グレード強度（数値）"><span class="unit">%</span></span><input type="range" id="grade-str" min="0" max="100" value="60"></div>
+    </section>
 
-    <!-- ビネット -->
-    <div class="section">
-      <div class="section-title">◎ ビネット</div>
-      <div class="row"><label>強度</label><input type="range" id="vignette" min="0" max="100" value="0"><input type="number" class="val" id="v-vignette" value="0" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px">%</span></div>
-      <div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:2px;">
-        四隅を暗くして写真中央を引き立てる
-      </div>
-    </div>
+    <section class="section">
+      <h2 class="section-title">ビネット</h2>
+      <div class="row"><label for="vignette">強度</label><span class="num"><input type="number" class="val" id="v-vignette" value="0" min="0" max="100" step="1" aria-label="ビネット強度（数値）"><span class="unit">%</span></span><input type="range" id="vignette" min="0" max="100" value="0"></div>
+      <p class="hint">四隅を暗くして、写真の中央を引き立てます。</p>
+    </section>
 
-    <!-- ドリームブラー -->
-    <div class="section">
-      <div class="section-title">💫 ドリームブラー</div>
-      <div class="row"><label>強度</label><input type="range" id="dream-blur" min="0" max="100" value="0"><input type="number" class="val" id="v-dream-blur" value="0" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px"></span></div>
-      <div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:2px;">
-        中心鮮明・端へ向かって放射状にぼかす
-      </div>
-    </div>
+    <section class="section">
+      <h2 class="section-title">ドリームブラー</h2>
+      <div class="row"><label for="dream-blur">強度</label><span class="num"><input type="number" class="val" id="v-dream-blur" value="0" min="0" max="100" step="1" aria-label="ドリームブラー強度（数値）"><span class="unit">%</span></span><input type="range" id="dream-blur" min="0" max="100" value="0"></div>
+      <p class="hint">中心はくっきり、端に向かって放射状にぼかします。</p>
+    </section>
 
-    <!-- 横ブラー -->
-    <div class="section">
-      <div class="section-title">↔ 横ブラー</div>
-      <div class="row"><label>強度</label><input type="range" id="h-blur" min="0" max="100" value="0"><input type="number" class="val" id="v-h-blur" value="0" min="0" max="100" step="1"><span style="color:var(--text-muted);font-size:10px"></span></div>
-      <div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:2px;">
-        水平方向に引き伸ばすズームブラー
-      </div>
-    </div>
+    <section class="section">
+      <h2 class="section-title">横ブラー</h2>
+      <div class="row"><label for="h-blur">強度</label><span class="num"><input type="number" class="val" id="v-h-blur" value="0" min="0" max="100" step="1" aria-label="横ブラー強度（数値）"><span class="unit">%</span></span><input type="range" id="h-blur" min="0" max="100" value="0"></div>
+      <p class="hint">水平方向に引き伸ばす、ズームブラーです。</p>
+    </section>
 
   </div><!-- /tab-effect -->
 
-  <button id="btn-download" disabled>✦ save as PNG</button>
-</div>
+  <div class="dock">
+    <button type="button" id="btn-download" disabled>PNGで保存</button>
+  </div>
+</aside>
 
-<!-- ===== PREVIEW ===== -->
-<div id="preview-area">
+<!-- ===== BENCH ===== -->
+<main id="preview-area">
   <div id="preview-placeholder">
-    <div class="big">📷</div>
-    画像をここにドロップ
+    <svg class="print-demo" viewBox="0 0 260 200" aria-hidden="true">
+      <rect class="pd-paper" x="10" y="10" width="240" height="180" rx="2" pathLength="1"/>
+      <rect class="pd-photo" x="30" y="30" width="200" height="108"/>
+      <path class="pd-cap" d="M30 158h82M30 171h54"/>
+    </svg>
+    <h2>写真を選んでください</h2>
+    <p><span>余白・撮影情報・色味を整えて、</span><span>PNGで保存できます。</span> <span>ドラッグ＆ドロップにも対応しています。</span></p>
+    <button type="button" class="btn-pick" id="btn-pick">写真を選ぶ</button>
   </div>
-  <div id="canvas-wrap" style="display:none">
-    <canvas id="preview-canvas"></canvas>
-  </div>
-</div>
 
-<div id="toast"></div>
+  <div id="canvas-wrap" style="display:none">
+    <div class="print">
+      <canvas id="preview-canvas" aria-label="仕上がりのプレビュー"></canvas>
+      <div id="compare-badge" aria-hidden="true">元の写真</div>
+    </div>
+    <div class="bench-bar">
+      <div id="readout" aria-live="polite"></div>
+      <button type="button" id="btn-compare" aria-describedby="compare-help">押している間、元の色を表示</button>
+      <span class="sr-only" id="compare-help">押している間だけ、グレードとエフェクトを外した写真を表示します。</span>
+    </div>
+  </div>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
 // ===== exifr import =====
@@ -858,6 +926,7 @@ const S = {
   commentPos: 'above',
   commentSz: 'large',
   outPx: 1080,
+  compare: false,   // 「押している間、元の色を表示」用
 };
 
 // ===== EL CACHE =====
@@ -884,6 +953,15 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
   });
 });
+
+// 見た目の .active を、読み上げ用の aria 属性にも反映する
+const ariaObserver = new MutationObserver(muts => muts.forEach(m => {
+  const t = m.target, on = String(t.classList.contains('active'));
+  if (t.hasAttribute('aria-pressed')) t.setAttribute('aria-pressed', on);
+  if (t.getAttribute('role') === 'tab') t.setAttribute('aria-selected', on);
+}));
+document.querySelectorAll('[aria-pressed], [role="tab"]').forEach(el =>
+  ariaObserver.observe(el, { attributes: true, attributeFilter: ['class'] }));
 
 // ===== TOAST =====
 let toastTimer = null;
@@ -923,6 +1001,12 @@ function _doRender() {
 }
 
 // ===== SLIDER BINDINGS =====
+// スライダーの「ここまで」の色塗り（CSS変数 --fill）
+function paintFill(slider) {
+  const mn = parseFloat(slider.min), mx = parseFloat(slider.max), v = parseFloat(slider.value);
+  slider.style.setProperty('--fill', (mx > mn ? ((v - mn) / (mx - mn)) * 100 : 0) + '%');
+}
+
 function bindSlider(id, valId, key, deferred=false) {
   const slider = EL[id], numInput = EL[valId];
   const doRender = deferred ? renderDeferred : render;
@@ -932,6 +1016,7 @@ function bindSlider(id, valId, key, deferred=false) {
     const v = parseFloat(slider.value);
     S[key] = v;
     numInput.value = v;
+    paintFill(slider);
     doRender();
   });
 
@@ -943,6 +1028,7 @@ function bindSlider(id, valId, key, deferred=false) {
     v = Math.min(mx, Math.max(mn, v));
     S[key] = v;
     slider.value = v;
+    paintFill(slider);
     doRender();
   });
 
@@ -955,6 +1041,7 @@ function bindSlider(id, valId, key, deferred=false) {
     numInput.value = v;
     S[key] = v;
     slider.value = v;
+    paintFill(slider);
     render();
   });
 }
@@ -967,6 +1054,7 @@ bindSlider('grade-str','v-grade-str','gradeStr', true);
 bindSlider('vignette','v-vignette','vignette', true);
 bindSlider('dream-blur','v-dream-blur','dreamBlur', true);
 bindSlider('h-blur','v-h-blur','hBlur', true);
+document.querySelectorAll('input[type=range]').forEach(paintFill);
 
 // Color
 ['bg-color','border-color','txt-color'].forEach(id => {
@@ -1028,6 +1116,7 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.classList.add('active');
     S.outPx = parseInt(btn.dataset.px);
     EL['custom-px'].value = '';
+    updateReadout();
   });
 });
 
@@ -1036,6 +1125,7 @@ EL['custom-px'].addEventListener('input', () => {
   if (v > 0) {
     document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
     S.outPx = v;
+    updateReadout();
   }
 });
 
@@ -1045,14 +1135,17 @@ dz.addEventListener('click', () => EL['file-input'].click());
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
-EL['file-input'].addEventListener('change', e => loadFile(e.target.files[0]));
+EL['file-input'].addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; });
+document.getElementById('btn-pick').addEventListener('click', () => EL['file-input'].click());
 const pa = document.getElementById('preview-area');
-pa.addEventListener('dragover', e => e.preventDefault());
-pa.addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); });
+pa.addEventListener('dragover', e => { e.preventDefault(); pa.classList.add('drag-over'); });
+pa.addEventListener('dragleave', e => { if (!pa.contains(e.relatedTarget)) pa.classList.remove('drag-over'); });
+pa.addEventListener('drop', e => { e.preventDefault(); pa.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
 
 let loadSeq = 0;
 async function loadFile(file) {
-  if (!file || !file.type.startsWith('image/')) return;
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast('この形式は読み込めません。JPEG・PNG・WebPを選んでください'); return; }
   const seq = ++loadSeq;
   const url = URL.createObjectURL(file);
   const img = new Image();
@@ -1063,7 +1156,8 @@ async function loadFile(file) {
     // 前の写真のExifが残らないようにリセット
     S.exif = { date:'', camera:'', lens:'', fnum:'', iso:'', focal:'' };
     EL['preview-placeholder'].style.display = 'none';
-    EL['canvas-wrap'].style.display = 'block';
+    EL['canvas-wrap'].style.display = 'flex';
+    document.getElementById('dz-main').textContent = '別の写真を選ぶ';
     EL['btn-download'].disabled = false;
     await loadExif(file, seq);
     if (seq !== loadSeq) return;
@@ -1071,7 +1165,7 @@ async function loadFile(file) {
   };
   img.onerror = () => {
     URL.revokeObjectURL(url);
-    toast('画像を読み込めませんでした');
+    toast('画像を読み込めませんでした。JPEG・PNG・WebPを選んでください');
   };
   img.src = url;
 }
@@ -1107,8 +1201,9 @@ async function loadExif(file, seq) {
     e.focal = fl ? (typeof fl==='number' ? fl.toFixed(0) : fl) + 'mm' : '';
 
     const got = [e.date,e.camera,e.lens,e.fnum].filter(Boolean).length;
-    toast(`Exif 読み込み完了（${got}/4項目）`);
-    const info = [e.camera, e.lens, e.focal, e.fnum, e.iso, e.date].filter(Boolean).join('  ·  ');
+    toast(`Exifを読み込みました（${got}/4項目）`);
+    const info = [e.camera, e.lens, [e.focal, e.fnum, e.iso].filter(Boolean).join('   '), e.date]
+      .filter(Boolean).join('\n');
     EL['exif-info'].style.display = 'block';
     EL['exif-info'].textContent = info || 'Exifなし';
   } catch(err) {
@@ -1153,22 +1248,23 @@ function _renderCore() {
   ctx.drawImage(S.img, padLR, padTB, iw, ih);
 
   // Color grade
-  if (S.grade !== 'none' && S.gradeStr > 0) {
+  const fx = !S.compare;
+  if (fx && S.grade !== 'none' && S.gradeStr > 0) {
     applyGrade(ctx, padLR, padTB, iw, ih, S.grade, S.gradeStr / 100);
   }
 
   // Vignette
-  if (S.vignette > 0) {
+  if (fx && S.vignette > 0) {
     applyVignette(ctx, padLR, padTB, iw, ih, S.vignette / 100);
   }
 
   // Dream blur
-  if (S.dreamBlur > 0) {
+  if (fx && S.dreamBlur > 0) {
     applyDreamBlur(ctx, padLR, padTB, iw, ih, S.img, S.dreamBlur / 100);
   }
 
   // Horizontal blur
-  if (S.hBlur > 0) {
+  if (fx && S.hBlur > 0) {
     applyHBlur(ctx, padLR, padTB, iw, ih, S.img, S.hBlur / 100);
   }
 
@@ -1177,6 +1273,20 @@ function _renderCore() {
   const commentPx = S.commentSz === 'large' ? txtPx * 1.5 : txtPx;
 
   drawExif(ctx, padLR, padTB, iw, ih, padExtra, txtPx, commentPx);
+  updateReadout();
+}
+
+// 保存したときのピクセル数を、プレビューの下に出す
+function outputSize() {
+  const c = EL['preview-canvas'];
+  if (S.outPx === 0) return [c.width, c.height];
+  const scale = S.outPx / Math.max(c.width, c.height);
+  return [Math.round(c.width * scale), Math.round(c.height * scale)];
+}
+function updateReadout() {
+  if (!S.img) return;
+  const [w, h] = outputSize();
+  document.getElementById('readout').textContent = `保存サイズ ${w} × ${h} px`;
 }
 
 // ===== GRADE =====
@@ -1425,8 +1535,39 @@ EL['btn-download'].addEventListener('click', () => {
     a.download = `framia-${dw}px.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 3000);
-    toast(`保存: framia-${dw}px.png`);
+    toast(`保存しました: framia-${dw}px.png`);
   }, 'image/png');
+});
+
+// ===== 比較：押している間だけ、元の色（グレード・エフェクトなし）を見る =====
+const cmpBtn = document.getElementById('btn-compare');
+const cmpBadge = document.getElementById('compare-badge');
+function setCompare(on) {
+  if (S.compare === on) return;
+  S.compare = on;
+  cmpBtn.classList.toggle('holding', on);
+  cmpBadge.classList.toggle('show', on);
+  if (S.img) render();
+}
+cmpBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (cmpBtn.setPointerCapture) cmpBtn.setPointerCapture(e.pointerId);
+  setCompare(true);
+});
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t =>
+  cmpBtn.addEventListener(t, () => setCompare(false)));
+cmpBtn.addEventListener('keydown', e => {
+  if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); setCompare(true); }
+});
+cmpBtn.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') setCompare(false); });
+cmpBtn.addEventListener('blur', () => setCompare(false));
+
+// ===== 狭い画面：設定シートの開閉（写真を大きく見たいとき） =====
+const sheetBtn = document.getElementById('sheet-toggle');
+sheetBtn.addEventListener('click', () => {
+  const collapsed = document.body.classList.toggle('sheet-collapsed');
+  sheetBtn.setAttribute('aria-expanded', String(!collapsed));
+  sheetBtn.setAttribute('aria-label', collapsed ? '設定パネルを開く' : '設定パネルを閉じる');
 });
 
 </script>
